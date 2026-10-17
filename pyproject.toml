@@ -15,6 +15,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "aiosqlite>=0.20.0",
     "greenlet>=3.0.0",
+    "aiofiles>=24.0.0",
 ]
 
 [project.optional-dependencies]

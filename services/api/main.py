@@ -100,6 +100,19 @@ def create_app() -> FastAPI:
     from services.api.api.v1 import api_v1_router
     app.include_router(api_v1_router)
 
+    # 6. Mount 10-ft Fire TV Web Client (S1 - S9)
+    from pathlib import Path
+    from starlette.staticfiles import StaticFiles
+    from fastapi.responses import RedirectResponse
+
+    client_dir = Path(__file__).resolve().parent.parent.parent / "apps" / "tv-client"
+    if client_dir.exists():
+        app.mount("/tv", StaticFiles(directory=str(client_dir), html=True), name="tv-client")
+
+        @app.get("/", include_in_schema=False)
+        async def root_redirect():
+            return RedirectResponse(url="/tv/")
+
     return app
 
 

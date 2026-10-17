@@ -17,13 +17,13 @@
 | **E2** | Domain model and persistence (SQLAlchemy, migrations) | P0 | Schema & data integrity | `VERIFIED` (Commit `c506462`) |
 | **E3** | API contracts and core backend services | P0/P1 | Contract stability | `VERIFIED` (Commit `d806bdf`) |
 | **E4** | Authorized content ingestion (SRT/VTT parsing & indexing) | P1 | Idempotent indexing | `VERIFIED` (Commit `5a20ba5`) |
-| **E5** | Retrieval and grounded AI answers (RAG orchestrator) | P1 | Citation validation | `VERIFIED` |
-| **E6** | Spoiler, authorization, and privacy enforcement | P0 (Q&A) | Server-side boundary gate | `VERIFIED` |
+| **E5** | Retrieval and grounded AI answers (RAG orchestrator) | P1 | Citation validation | `VERIFIED` (Commit `7dd294a`) |
+| **E6** | Spoiler, authorization, and privacy enforcement | P0 (Q&A) | Server-side boundary gate | `VERIFIED` (Commit `7dd294a`) |
 | **G1** | **Backend Acceptance Gate** | **P0** | **Prerequisite for UI** | `VERIFIED` (Signed-off; 41/41 tests passing) |
-| **E7** | Frontend foundation and API integration | P1 | Verified API client | `IN_PROGRESS` |
-| **E8** | Core Fire TV user journeys (10-ft remote D-pad) | P1 | Remote D-pad navigation | `NOT_STARTED` |
-| **E9** | End-to-end integration and regression | P1 | AC-001 - AC-020 | `NOT_STARTED` |
-| **E10**| Operational readiness and controlled beta | P2 | Operational targets | `NOT_STARTED` |
+| **E7** | Frontend foundation and API integration | P1 | Verified API client | `VERIFIED` |
+| **E8** | Core Fire TV user journeys (10-ft remote D-pad) | P1 | Remote D-pad navigation | `VERIFIED` |
+| **E9** | End-to-end integration and regression | P1 | AC-001 - AC-020 | `VERIFIED` (45/45 tests passing) |
+| **E10**| Operational readiness and controlled beta | P2 | Operational targets | `READY` |
 | **E11**| Production launch | P2 | Final sign-off | `NOT_STARTED` |
 
 ---
@@ -98,21 +98,21 @@
 ### Epic E5: Retrieval and Grounded AI Answers
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `BE-AI-001` | Subtitle retriever with pre-retrieval boundary filtering | P1 | E2, E4 | `VERIFIED` | `services/api/ai/retriever.py` with SQL temporal cutoff | Pending |
-| `BE-AI-002` | Hybrid cosine & lexical ranking with deduplication | P1 | E5-001 | `VERIFIED` | Cosine similarity + keyword scoring in `SubtitleRetriever` | Pending |
-| `BE-AI-003` | Model provider abstraction and Gemini/Mock implementations | P1 | E5-002 | `VERIFIED` | `services/api/ai/provider.py` (`DeterministicMock` & `Gemini`) | Pending |
-| `BE-AI-004` | Grounded answer generation and verified citations | P1 | E5-003 | `VERIFIED` | `RagOrchestrator` verifies retrieved chunk ID citations | Pending |
-| `BE-AI-005` | Safe abstention on insufficient or unrelated evidence | P1 | E5-004 | `VERIFIED` | Tested: out-of-domain questions abstain safely | Pending |
-| `BE-AI-006` | Prompt injection defense & untrusted transcript framing | P1 | E5-005 | `VERIFIED` | Subtitles strictly framed in `<transcript_data>` tags | Pending |
+| `BE-AI-001` | Subtitle retriever with pre-retrieval boundary filtering | P1 | E2, E4 | `VERIFIED` | `services/api/ai/retriever.py` with SQL temporal cutoff | `7dd294a` |
+| `BE-AI-002` | Hybrid cosine & lexical ranking with deduplication | P1 | E5-001 | `VERIFIED` | Cosine similarity + keyword scoring in `SubtitleRetriever` | `7dd294a` |
+| `BE-AI-003` | Model provider abstraction and Gemini/Mock implementations | P1 | E5-002 | `VERIFIED` | `services/api/ai/provider.py` (`DeterministicMock` & `Gemini`) | `7dd294a` |
+| `BE-AI-004` | Grounded answer generation and verified citations | P1 | E5-003 | `VERIFIED` | `RagOrchestrator` verifies retrieved chunk ID citations | `7dd294a` |
+| `BE-AI-005` | Safe abstention on insufficient or unrelated evidence | P1 | E5-004 | `VERIFIED` | Tested: out-of-domain questions abstain safely | `7dd294a` |
+| `BE-AI-006` | Prompt injection defense & untrusted transcript framing | P1 | E5-005 | `VERIFIED` | Subtitles strictly framed in `<transcript_data>` tags | `7dd294a` |
 
 ### Epic E6: Spoiler, Authorization, and Privacy Enforcement
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `BE-SAFE-001` | Server-authoritative temporal spoiler boundary | P0 | E2, E5 | `VERIFIED` | Enforced at SQL level (`end_time_seconds <= boundary`) | Pending |
-| `BE-SAFE-002` | Single-use spoiler confirmation nonces | P0 | E3, E5 | `VERIFIED` | Nonces generated and consumed atomically with TTL | Pending |
-| `BE-SAFE-003` | Session ownership and cross-user authorization | P0 | E3 | `VERIFIED` | Strict header checks and 403 enforcement | Pending |
-| `BE-SAFE-004` | Logging redaction and privacy compliance | P0 | E1 | `VERIFIED` | Sensitive queries and secrets redacted from logs | Pending |
-| `BE-SAFE-005` | Adversarial spoiler regression test suite | P0 | E5, E6 | `VERIFIED` | `tests/test_rag_and_spoiler_controls.py` (6 adversarial tests) | Pending |
+| `BE-SAFE-001` | Server-authoritative temporal spoiler boundary | P0 | E2, E5 | `VERIFIED` | Enforced at SQL level (`end_time_seconds <= boundary`) | `7dd294a` |
+| `BE-SAFE-002` | Single-use spoiler confirmation nonces | P0 | E3, E5 | `VERIFIED` | Nonces generated and consumed atomically with TTL | `7dd294a` |
+| `BE-SAFE-003` | Session ownership and cross-user authorization | P0 | E3 | `VERIFIED` | Strict header checks and 403 enforcement | `7dd294a` |
+| `BE-SAFE-004` | Logging redaction and privacy compliance | P0 | E1 | `VERIFIED` | Sensitive queries and secrets redacted from logs | `7dd294a` |
+| `BE-SAFE-005` | Adversarial spoiler regression test suite | P0 | E5, E6 | `VERIFIED` | `tests/test_rag_and_spoiler_controls.py` (6 adversarial tests) | `7dd294a` |
 
 ### Backend Acceptance Gate G1 Sign-off
 - [x] Core API contracts exist, typed, and tested (`test_api_v1_endpoints.py`).
@@ -122,7 +122,39 @@
 - [x] Prompt injection defense and safe abstention verified.
 - [x] OpenAPI schema matches actual endpoints (`docs/api/openapi.json`).
 - [x] 41/41 backend tests passing in < 1.0s.
-- **GATE G1 STATUS: PASSED (VERIFIED)** — Ready for Frontend Foundation (Phase 2 / Epics E7-E8).
+- **GATE G1 STATUS: PASSED (VERIFIED)**
+
+### Epic E7: Frontend Foundation and API Integration
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `FE-FOUND-001` | Inspect and establish frontend architecture | P1 | G1 | `VERIFIED` | `apps/tv-client/` with static mount at `/tv` | Pending |
+| `FE-FOUND-002` | Centralized typed API client matching contract | P1 | E7-001 | `VERIFIED` | `apps/tv-client/js/api.js` (Titles, Sessions, Questions) | Pending |
+| `FE-FOUND-003` | Dynamic origin base URL configuration | P1 | E7-002 | `VERIFIED` | Automatically resolves `/api/v1` without secrets | Pending |
+| `FE-FOUND-004` | Common loading, error, empty, and retry states | P1 | E7-003 | `VERIFIED` | Spinners, empty catalog card, toast notifications | Pending |
+| `FE-FOUND-005` | Frontend test suite and asset validation | P1 | E7-004 | `VERIFIED` | `tests/test_tv_client.py` (3/3 passing) | Pending |
+
+### Epic E8: Core Fire TV User Journeys (10-ft Remote D-Pad)
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `FE-UI-001` | Screen 1 (S1): Welcome and privacy notice | P1 | E7 | `VERIFIED` | `s1-welcome` with 10-ft typography & privacy terms | Pending |
+| `FE-UI-002` | Screen 2 (S2): Published title catalog browsing | P1 | E7 | `VERIFIED` | `s2-catalog` with readiness badges & card grid | Pending |
+| `FE-UI-003` | Screen 3 (S3): Playback slider & interval jumps | P1 | E7 | `VERIFIED` | `s3-details` with digital clock & +5m/+15m jumps | Pending |
+| `FE-UI-004` | Screen 4 (S4): Companion console & presets | P1 | E7 | `VERIFIED` | `s4-companion` with presets & custom TV input | Pending |
+| `FE-UI-005` | Screen 5 (S5): Grounded answer & scene citations | P1 | E7 | `VERIFIED` | `s5-answer` with timestamp badges & verbatim quotes | Pending |
+| `FE-UI-006` | Screen 6 (S6): Clarification & safe abstention | P1 | E7 | `VERIFIED` | `s6-clarification` with advance time / rephrase options | Pending |
+| `FE-UI-007` | Screen 7 (S7): Spoiler confirmation modal | P0 | E7 | `VERIFIED` | `s7-spoiler-modal` with nonce & default Cancel focus | Pending |
+| `FE-UI-008` | Screen 8 (S8): Settings & viewer privacy controls | P1 | E7 | `VERIFIED` | `s8-settings` with reset session & audit terms | Pending |
+| `FE-UI-009` | Screen 9 (S9): Operations & diagnostics panel | P1 | E7 | `VERIFIED` | `s9-admin` with subtitle ingestion & version table | Pending |
+| `FE-UI-010` | Spatial D-pad remote engine & simulator overlay | P0 | E7, E8 | `VERIFIED` | `apps/tv-client/js/remote.js` (Arrow navigation & modal trap) | Pending |
+
+### Epic E9: End-to-End Integration and Regression
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `E2E-001` | Complete supported user journeys (AC-001 to AC-020) | P1 | E8 | `VERIFIED` | `tests/test_e2e_user_journeys.py` (12-step end-to-end journey) | Pending |
+| `E2E-002` | Ingestion-to-retrieval-to-answer behavior | P1 | E9-001 | `VERIFIED` | Subtitle ingestion -> active version -> grounded answer | Pending |
+| `E2E-003` | Spoiler boundaries through actual frontend/API paths | P1 | E9-002 | `VERIFIED` | Gated in safe mode, elevated via nonce, verified in test | Pending |
+| `E2E-004` | Cross-user session isolation & unauthorized defense | P1 | E9-003 | `VERIFIED` | 403 Forbidden for cross-user attempts | Pending |
+| `E2E-005` | Full regression suite passes across all test modules | P1 | E9-004 | `VERIFIED` | **45 passed in 0.93s** across 9 test suites | Pending |
 
 ---
 

@@ -1,0 +1,153 @@
+/**
+ * Rewind TV API Client
+ * Typed communication layer matching the authoritative 04_API_CONTRACT.
+ */
+
+class RewindApiClient {
+  constructor(baseUrl = '') {
+    // If running in browser alongside FastAPI, use origin; otherwise localhost:8000
+    this.baseUrl = baseUrl || (window.location.origin.includes('http') ? `${window.location.origin}/api/v1` : 'http://localhost:8000/api/v1');
+    this.userId = localStorage.getItem('rewind_user_id') || 'viewer-firetv-default';
+  }
+
+  setUserId(userId) {
+    this.userId = userId;
+    localStorage.setItem('rewind_user_id', userId);
+  }
+
+  getHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'X-User-ID': this.userId,
+    };
+  }
+
+  async _request(endpoint, options = {}) {
+    const url = `${this.baseUrl}${endpoint}`;
+    const defaultHeaders = this.getHeaders();
+    
+    const config = {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...(options.headers || {}),
+      },
+    };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const error = new Error(data?.message || `HTTP ${response.status}: Request failed`);
+        error.status = response.status;
+        error.code = data?.code || 'API_ERROR';
+        error.requestId = data?.request_id;
+        error.details = data?.details;
+        throw error;
+      }
+
+      return data;
+    } catch (err) {
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        const netErr = new Error('Cannot connect to Rewind Backend. Is the API server running?');
+        netErr.code = 'NETWORK_OFFLINE';
+        throw netErr;
+      }
+      throw err;
+    }
+  }
+
+  // Titles
+  async getTitles(limit = 20, offset = 0) {
+    return this._request(`/titles?limit=${limit}&offset=${offset}`);
+  }
+
+  async getTitle(titleId) {
+    return this._request(`/titles/${encodeURIComponent(titleId)}`);
+  }
+
+  // Sessions
+  async createSession(titleId, initialPosition = 0, spoilerMode = 'safe') {
+    return this._request('/sessions', {
+      method: 'POST',
+      body: JSON.stringify({
+        title_id: titleId,
+        position_seconds: initialPosition,
+        source: 'manual_slider',
+      }),
+    });
+  }
+
+  async getSession(sessionId) {
+    return this._request(`/sessions/${encodeURIComponent(sessionId)}`);
+  }
+
+  async updateProgress(sessionId, positionSeconds, source = 'manual_slider') {
+    return this._request(`/sessions/${encodeURIComponent(sessionId)}/progress`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        current_position_seconds: positionSeconds,
+        source: source,
+      }),
+    });
+  }
+
+  async confirmSpoiler(sessionId, nonce) {
+    return this._request(`/sessions/${encodeURIComponent(sessionId)}/spoiler-confirmation`, {
+      method: 'POST',
+      body: JSON.stringify({
+        confirmation_nonce: nonce,
+      }),
+    });
+  }
+
+  async revertSafeMode(sessionId) {
+    return this._request(`/sessions/${encodeURIComponent(sessionId)}/safe-mode`, {
+      method: 'POST',
+    });
+  }
+
+  // Question & RAG
+  async askQuestion(sessionId, questionText) {
+    return this._request(`/sessions/${encodeURIComponent(sessionId)}/questions`, {
+      method: 'POST',
+      body: JSON.stringify({
+        question: questionText,
+      }),
+    });
+  }
+
+  // Admin Ingestion & Publish
+  async adminIngest(movieId, subtitleContent, autoPublish = true) {
+    return this._request(`/admin/titles/${encodeURIComponent(movieId)}/ingest`, {
+      method: 'POST',
+      headers: {
+        'X-Admin-Role': 'content_manager',
+      },
+      body: JSON.stringify({
+        raw_content: subtitleContent,
+        auto_publish: autoPublish,
+      }),
+    });
+  }
+
+  async adminPublishVersion(movieId, contentVersionId) {
+    return this._request(`/admin/titles/${encodeURIComponent(movieId)}/publish-version/${encodeURIComponent(contentVersionId)}`, {
+      method: 'POST',
+      headers: {
+        'X-Admin-Role': 'content_manager',
+      },
+    });
+  }
+
+  // System Health
+  async checkHealth() {
+    const healthUrl = this.baseUrl.replace('/api/v1', '/health/ready');
+    const res = await fetch(healthUrl);
+    return res.json();
+  }
+}
+
+// Global API instance
+window.RewindApi = new RewindApiClient();

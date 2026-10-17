@@ -61,7 +61,7 @@ This matrix maps every functional requirement (SRS), non-functional requirement 
 | **NFR-PERF-001**| Performance | Latency p50/p95/p99 measured and instrumented | EPIC-07 / TASK-07-02 | `test_performance_benchmarks` | BACKLOG |
 | **NFR-SCALE-001**| Scalability | Stateless API server instances | EPIC-01 / TASK-01-03 | `test_stateless_api_concurrency` | BACKLOG |
 | **NFR-OBS-001** | Observability | Correlation/Request ID on every request, trace, log | EPIC-01 / TASK-01-01 | `test_health_and_errors.py` | `VERIFIED` |
-| **NFR-ACC-001** | Accessibility | Remote-only D-pad navigation; visible focus; 10-ft UI | EPIC-06 / TASK-06-01 | `test_tv_navigation_focus_state` | BACKLOG (Phase 2 UI) |
+| **NFR-ACC-001** | Accessibility | Remote-only D-pad navigation; visible focus; 10-ft UI | EPIC-06 / TASK-06-01 | `test_tv_client.py` | `VERIFIED` |
 | **NFR-MAINT-001**| Maintainability| Versioned API (`/api/v1`) & reversible database migrations | EPIC-01 / TASK-01-02 | `test_domain_and_persistence.py` | `VERIFIED` |
 | **NFR-DR-001**  | DR | Documented recovery, backup, and index rebuild workflows | EPIC-07 / TASK-07-03 | `test_disaster_recovery_plan` | BACKLOG |
 | **NFR-COST-001**| Cost | Token usage & embedding costs tracked per request | EPIC-04 / TASK-04-06 | `services/api/ai/provider.py` | `VERIFIED` |
@@ -88,7 +88,7 @@ This matrix maps every functional requirement (SRS), non-functional requirement 
 | **AC-014** | Cache Policy Correctness | Stricter policy/progress cannot hit full-spoiler cached answer | Cache Key Generator | `test_ac014_cache_policy_isolation` | BACKLOG |
 | **AC-015** | Provider Outage | LLM timeout returns controlled retryable error, no hallucination | LLM Adapter | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
 | **AC-016** | Rights Revocation | Revoking authorization unpublishes title and invalidates cache | Rights / Admin Service | `test_api_v1_endpoints.py` | `VERIFIED` |
-| **AC-017** | Remote-Only TV Use | TV remote D-pad allows complete journey from title to answer | TV Web / Client App | `test_ac017_remote_only_navigation` | BACKLOG (Phase 2 UI) |
+| **AC-017** | Remote-Only TV Use | TV remote D-pad allows complete journey from title to answer | TV Web / Client App | `test_tv_client.py` & `test_e2e_user_journeys.py` | `VERIFIED` |
 | **AC-018** | Concurrent Publish | Concurrent index publishes resolve to exactly one active index | Index Manager | `test_ingestion_pipeline.py` | `VERIFIED` |
 | **AC-019** | Malformed Timestamps | Reversed/corrupt timestamps rejected at ingestion | Ingestion Parser | `test_ingestion_pipeline.py` | `VERIFIED` |
 | **AC-020** | Logging Privacy | Secrets & sensitive question text redacted from logs | Logging Middleware | `test_logging.py` | `VERIFIED` |
