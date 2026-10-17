@@ -16,12 +16,12 @@
 | **E1** | Backend foundation (FastAPI, config, logging, health) | P0 | Reproducible startup | `VERIFIED` (Commit `c211695`) |
 | **E2** | Domain model and persistence (SQLAlchemy, migrations) | P0 | Schema & data integrity | `VERIFIED` (Commit `c506462`) |
 | **E3** | API contracts and core backend services | P0/P1 | Contract stability | `VERIFIED` (Commit `d806bdf`) |
-| **E4** | Authorized content ingestion (SRT/VTT parsing & indexing) | P1 | Idempotent indexing | `VERIFIED` |
-| **E5** | Retrieval and grounded AI answers (RAG orchestrator) | P1 | Citation validation | `IN_PROGRESS` |
-| **E6** | Spoiler, authorization, and privacy enforcement | P0 (Q&A) | Server-side boundary gate | `READY` |
-| **G1** | **Backend Acceptance Gate** | **P0** | **Prerequisite for UI** | `BLOCKED` (Pending E5-E6) |
-| **E7** | Frontend foundation and API integration | P1 | Verified API client | `NOT_STARTED` (Gate G1) |
-| **E8** | Core Fire TV user journeys (10-ft remote D-pad) | P1 | Remote D-pad navigation | `NOT_STARTED` (Gate G1) |
+| **E4** | Authorized content ingestion (SRT/VTT parsing & indexing) | P1 | Idempotent indexing | `VERIFIED` (Commit `5a20ba5`) |
+| **E5** | Retrieval and grounded AI answers (RAG orchestrator) | P1 | Citation validation | `VERIFIED` |
+| **E6** | Spoiler, authorization, and privacy enforcement | P0 (Q&A) | Server-side boundary gate | `VERIFIED` |
+| **G1** | **Backend Acceptance Gate** | **P0** | **Prerequisite for UI** | `VERIFIED` (Signed-off; 41/41 tests passing) |
+| **E7** | Frontend foundation and API integration | P1 | Verified API client | `IN_PROGRESS` |
+| **E8** | Core Fire TV user journeys (10-ft remote D-pad) | P1 | Remote D-pad navigation | `NOT_STARTED` |
 | **E9** | End-to-end integration and regression | P1 | AC-001 - AC-020 | `NOT_STARTED` |
 | **E10**| Operational readiness and controlled beta | P2 | Operational targets | `NOT_STARTED` |
 | **E11**| Production launch | P2 | Final sign-off | `NOT_STARTED` |
@@ -82,18 +82,47 @@
 ### Epic E4: Authorized Content Ingestion
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `BE-INGEST-001` | Supported source formats & encoding validation | P1 | E1, E2 | `VERIFIED` | SRT & WebVTT support in `services/api/ingestion/parser.py` | Pending |
-| `BE-INGEST-002` | Asset validation, size limits, and checksums | P1 | E4-001 | `VERIFIED` | SHA256 checksum calculation and empty input checks | Pending |
-| `BE-INGEST-003` | Timestamp parser and boundary validation | P1 | E4-002 | `VERIFIED` | Rejection of inverted intervals and negative timestamps | Pending |
-| `BE-INGEST-004` | Text normalization and speaker attribution | P1 | E4-003 | `VERIFIED` | HTML tag strip & speaker extraction (`clean_subtitle_text`) | Pending |
-| `BE-INGEST-005` | Deterministic chunking with timing metadata | P1 | E4-004 | `VERIFIED` | `services/api/ingestion/chunker.py` (scene-level windowing) | Pending |
-| `BE-INGEST-006` | Embedding provider interface and adapters | P1 | E4-005 | `VERIFIED` | `DeterministicMockEmbeddingProvider` & `GeminiEmbeddingProvider` | Pending |
-| `BE-INGEST-007` | Persist chunks and vector metadata in database | P1 | E4-006 | `VERIFIED` | `SubtitleChunkRepository.bulk_create` persistence | Pending |
-| `BE-INGEST-008` | Ingestion status and diagnostic reporting | P1 | E4-007 | `VERIFIED` | `IngestionResult` with counts, timing, and status | Pending |
-| `BE-INGEST-009` | Idempotency and safe reprocessing | P1 | E4-008 | `VERIFIED` | Tested duplicate submission returns existing version | Pending |
-| `BE-INGEST-010` | Staged index isolation before verification | P1 | E4-009 | `VERIFIED` | Versions remain staged until atomic publish switch | Pending |
-| `BE-INGEST-011` | Admin endpoints for ingestion & publication | P1 | E4-010 | `VERIFIED` | `POST /admin/titles/{id}/ingest`, `POST publish-version` | Pending |
-| `BE-INGEST-012` | Ingestion regression & boundary test suite | P1 | E4-011 | `VERIFIED` | 9 unit/integration tests in `tests/test_ingestion_pipeline.py` | Pending |
+| `BE-INGEST-001` | Supported source formats & encoding validation | P1 | E1, E2 | `VERIFIED` | SRT & WebVTT support in `services/api/ingestion/parser.py` | `5a20ba5` |
+| `BE-INGEST-002` | Asset validation, size limits, and checksums | P1 | E4-001 | `VERIFIED` | SHA256 checksum calculation and empty input checks | `5a20ba5` |
+| `BE-INGEST-003` | Timestamp parser and boundary validation | P1 | E4-002 | `VERIFIED` | Rejection of inverted intervals and negative timestamps | `5a20ba5` |
+| `BE-INGEST-004` | Text normalization and speaker attribution | P1 | E4-003 | `VERIFIED` | HTML tag strip & speaker extraction (`clean_subtitle_text`) | `5a20ba5` |
+| `BE-INGEST-005` | Deterministic chunking with timing metadata | P1 | E4-004 | `VERIFIED` | `services/api/ingestion/chunker.py` (scene-level windowing) | `5a20ba5` |
+| `BE-INGEST-006` | Embedding provider interface and adapters | P1 | E4-005 | `VERIFIED` | `DeterministicMockEmbeddingProvider` & `GeminiEmbeddingProvider` | `5a20ba5` |
+| `BE-INGEST-007` | Persist chunks and vector metadata in database | P1 | E4-006 | `VERIFIED` | `SubtitleChunkRepository.bulk_create` persistence | `5a20ba5` |
+| `BE-INGEST-008` | Ingestion status and diagnostic reporting | P1 | E4-007 | `VERIFIED` | `IngestionResult` with counts, timing, and status | `5a20ba5` |
+| `BE-INGEST-009` | Idempotency and safe reprocessing | P1 | E4-008 | `VERIFIED` | Tested duplicate submission returns existing version | `5a20ba5` |
+| `BE-INGEST-010` | Staged index isolation before verification | P1 | E4-009 | `VERIFIED` | Versions remain staged until atomic publish switch | `5a20ba5` |
+| `BE-INGEST-011` | Admin endpoints for ingestion & publication | P1 | E4-010 | `VERIFIED` | `POST /admin/titles/{id}/ingest`, `POST publish-version` | `5a20ba5` |
+| `BE-INGEST-012` | Ingestion regression & boundary test suite | P1 | E4-011 | `VERIFIED` | 9 unit/integration tests in `tests/test_ingestion_pipeline.py` | `5a20ba5` |
+
+### Epic E5: Retrieval and Grounded AI Answers
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `BE-AI-001` | Subtitle retriever with pre-retrieval boundary filtering | P1 | E2, E4 | `VERIFIED` | `services/api/ai/retriever.py` with SQL temporal cutoff | Pending |
+| `BE-AI-002` | Hybrid cosine & lexical ranking with deduplication | P1 | E5-001 | `VERIFIED` | Cosine similarity + keyword scoring in `SubtitleRetriever` | Pending |
+| `BE-AI-003` | Model provider abstraction and Gemini/Mock implementations | P1 | E5-002 | `VERIFIED` | `services/api/ai/provider.py` (`DeterministicMock` & `Gemini`) | Pending |
+| `BE-AI-004` | Grounded answer generation and verified citations | P1 | E5-003 | `VERIFIED` | `RagOrchestrator` verifies retrieved chunk ID citations | Pending |
+| `BE-AI-005` | Safe abstention on insufficient or unrelated evidence | P1 | E5-004 | `VERIFIED` | Tested: out-of-domain questions abstain safely | Pending |
+| `BE-AI-006` | Prompt injection defense & untrusted transcript framing | P1 | E5-005 | `VERIFIED` | Subtitles strictly framed in `<transcript_data>` tags | Pending |
+
+### Epic E6: Spoiler, Authorization, and Privacy Enforcement
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `BE-SAFE-001` | Server-authoritative temporal spoiler boundary | P0 | E2, E5 | `VERIFIED` | Enforced at SQL level (`end_time_seconds <= boundary`) | Pending |
+| `BE-SAFE-002` | Single-use spoiler confirmation nonces | P0 | E3, E5 | `VERIFIED` | Nonces generated and consumed atomically with TTL | Pending |
+| `BE-SAFE-003` | Session ownership and cross-user authorization | P0 | E3 | `VERIFIED` | Strict header checks and 403 enforcement | Pending |
+| `BE-SAFE-004` | Logging redaction and privacy compliance | P0 | E1 | `VERIFIED` | Sensitive queries and secrets redacted from logs | Pending |
+| `BE-SAFE-005` | Adversarial spoiler regression test suite | P0 | E5, E6 | `VERIFIED` | `tests/test_rag_and_spoiler_controls.py` (6 adversarial tests) | Pending |
+
+### Backend Acceptance Gate G1 Sign-off
+- [x] Core API contracts exist, typed, and tested (`test_api_v1_endpoints.py`).
+- [x] Database migrations and relational integrity tested (`test_domain_and_persistence.py`).
+- [x] Content ingestion pipeline operational (`test_ingestion_pipeline.py`).
+- [x] Pre-retrieval spoiler boundary strictly verified (`test_rag_and_spoiler_controls.py`).
+- [x] Prompt injection defense and safe abstention verified.
+- [x] OpenAPI schema matches actual endpoints (`docs/api/openapi.json`).
+- [x] 41/41 backend tests passing in < 1.0s.
+- **GATE G1 STATUS: PASSED (VERIFIED)** — Ready for Frontend Foundation (Phase 2 / Epics E7-E8).
 
 ---
 

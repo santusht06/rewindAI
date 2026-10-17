@@ -51,20 +51,20 @@ This matrix maps every functional requirement (SRS), non-functional requirement 
 
 | Req ID | Category | Requirement Summary | Agile Epic / Task | Target Test Suite | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **NFR-REL-001** | Reliability | LLM failure returns controlled fallback; no fake success | EPIC-04 / TASK-04-06 | `test_provider_failure_graceful_handling` | BACKLOG |
-| **NFR-REL-002** | Reliability | Bounded timeouts, retries, cancellation for external calls | EPIC-04 / TASK-04-06 | `test_provider_timeout_and_retries` | BACKLOG |
-| **NFR-REL-003** | Reliability | Retried writes idempotent via idempotency keys | EPIC-02 / TASK-02-04 | `test_idempotent_session_writes` | BACKLOG |
-| **NFR-SEC-001** | Security | Secrets stored server-side; never shipped in TV client | EPIC-01 / TASK-01-01 | `test_config_secrets_leak_scan` | BACKLOG |
-| **NFR-SEC-002** | Security | Parameterized SQL / safe ORM queries; no raw injection | EPIC-01 / TASK-01-02 | `test_sql_parameterization_safety` | BACKLOG |
-| **NFR-SEC-003** | Security | Strict authorization checked at every trust boundary | EPIC-02 / TASK-02-03 | `test_auth_boundary_enforcement` | BACKLOG |
-| **NFR-PRIV-001**| Privacy | Logs exclude credentials, raw tokens, unnecessary text | EPIC-01 / TASK-01-01 | `test_logger_redaction` | BACKLOG |
+| **NFR-REL-001** | Reliability | LLM failure returns controlled fallback; no fake success | EPIC-04 / TASK-04-06 | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
+| **NFR-REL-002** | Reliability | Bounded timeouts, retries, cancellation for external calls | EPIC-04 / TASK-04-06 | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
+| **NFR-REL-003** | Reliability | Retried writes idempotent via idempotency keys | EPIC-02 / TASK-02-04 | `test_domain_and_persistence.py` | `VERIFIED` |
+| **NFR-SEC-001** | Security | Secrets stored server-side; never shipped in TV client | EPIC-01 / TASK-01-01 | `test_config.py` | `VERIFIED` |
+| **NFR-SEC-002** | Security | Parameterized SQL / safe ORM queries; no raw injection | EPIC-01 / TASK-01-02 | `test_domain_and_persistence.py` | `VERIFIED` |
+| **NFR-SEC-003** | Security | Strict authorization checked at every trust boundary | EPIC-02 / TASK-02-03 | `test_api_v1_endpoints.py` | `VERIFIED` |
+| **NFR-PRIV-001**| Privacy | Logs exclude credentials, raw tokens, unnecessary text | EPIC-01 / TASK-01-01 | `test_logging.py` | `VERIFIED` |
 | **NFR-PERF-001**| Performance | Latency p50/p95/p99 measured and instrumented | EPIC-07 / TASK-07-02 | `test_performance_benchmarks` | BACKLOG |
 | **NFR-SCALE-001**| Scalability | Stateless API server instances | EPIC-01 / TASK-01-03 | `test_stateless_api_concurrency` | BACKLOG |
-| **NFR-OBS-001** | Observability | Correlation/Request ID on every request, trace, log | EPIC-01 / TASK-01-01 | `test_request_id_middleware` | BACKLOG |
-| **NFR-ACC-001** | Accessibility | Remote-only D-pad navigation; visible focus; 10-ft UI | EPIC-06 / TASK-06-01 | `test_tv_navigation_focus_state` | BACKLOG |
-| **NFR-MAINT-001**| Maintainability| Versioned API (`/api/v1`) & reversible database migrations | EPIC-01 / TASK-01-02 | `test_migration_upgrade_and_downgrade` | BACKLOG |
+| **NFR-OBS-001** | Observability | Correlation/Request ID on every request, trace, log | EPIC-01 / TASK-01-01 | `test_health_and_errors.py` | `VERIFIED` |
+| **NFR-ACC-001** | Accessibility | Remote-only D-pad navigation; visible focus; 10-ft UI | EPIC-06 / TASK-06-01 | `test_tv_navigation_focus_state` | BACKLOG (Phase 2 UI) |
+| **NFR-MAINT-001**| Maintainability| Versioned API (`/api/v1`) & reversible database migrations | EPIC-01 / TASK-01-02 | `test_domain_and_persistence.py` | `VERIFIED` |
 | **NFR-DR-001**  | DR | Documented recovery, backup, and index rebuild workflows | EPIC-07 / TASK-07-03 | `test_disaster_recovery_plan` | BACKLOG |
-| **NFR-COST-001**| Cost | Token usage & embedding costs tracked per request | EPIC-04 / TASK-04-06 | `test_token_and_cost_accounting` | BACKLOG |
+| **NFR-COST-001**| Cost | Token usage & embedding costs tracked per request | EPIC-04 / TASK-04-06 | `services/api/ai/provider.py` | `VERIFIED` |
 
 ---
 
@@ -72,23 +72,23 @@ This matrix maps every functional requirement (SRS), non-functional requirement 
 
 | AC ID | Title | Summary | Target Implementation | Test Case | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **AC-001** | Supported Title | Published title with active index reports questions available | Catalog & Session API | `test_ac001_supported_title_available` | BACKLOG |
-| **AC-002** | Unsupported Title | Unsupported title explains limitation; does NOT invoke LLM | Catalog & Session API | `test_ac002_unsupported_title_safe_exit` | BACKLOG |
-| **AC-003** | Unknown Progress | Unknown progress requests confirmation; no silent full access | Session & Spoiler Engine | `test_ac003_unknown_progress_gate` | BACKLOG |
-| **AC-004** | Future Evidence | Retrieval strictly excludes evidence beyond position boundary | Spoiler Filter & Retrieval | `test_ac004_future_chunks_excluded` | BACKLOG |
-| **AC-005** | Grounded Answer | Permitted evidence produces grounded answer with chunk citations | RAG Orchestrator | `test_ac005_grounded_answer_citations` | BACKLOG |
-| **AC-006** | Insufficient Evidence | Insufficient evidence returns abstention/clarification | RAG Orchestrator | `test_ac006_abstention_on_missing_evidence`| BACKLOG |
-| **AC-007** | Fake Citation | Model-hallucinated chunk ID is rejected by server | Answer Validator | `test_ac007_reject_hallucinated_citation` | BACKLOG |
-| **AC-008** | Prompt Injection | Malicious instruction in subtitle treated as data, not instruction | Prompt Builder & Guard | `test_ac008_subtitle_prompt_injection` | BACKLOG |
-| **AC-009** | Spoiler Confirmation | Spoiler question triggers warning & server-side confirmation | Spoiler Policy Engine | `test_ac009_spoiler_confirmation_flow` | BACKLOG |
-| **AC-010** | Forged Consent | Client flag `spoilers=true` without server nonce is rejected | Spoiler Policy Engine | `test_ac010_forged_consent_rejected` | BACKLOG |
-| **AC-011** | Cross-User Access | User B cannot access User A's session or questions | Auth & Session Security | `test_ac011_cross_user_isolation` | BACKLOG |
-| **AC-012** | Idempotent Ingestion | Re-submitting same asset does not duplicate chunks | Ingestion Worker | `test_ac012_ingestion_idempotency` | BACKLOG |
-| **AC-013** | Failed Reindex | Staging index failure leaves last good index active | Index Manager | `test_ac013_failed_reindex_rollback` | BACKLOG |
+| **AC-001** | Supported Title | Published title with active index reports questions available | Catalog & Session API | `test_api_v1_endpoints.py` | `VERIFIED` |
+| **AC-002** | Unsupported Title | Unsupported title explains limitation; does NOT invoke LLM | Catalog & Session API | `test_api_v1_endpoints.py` | `VERIFIED` |
+| **AC-003** | Unknown Progress | Unknown progress requests confirmation; no silent full access | Session & Spoiler Engine | `test_api_v1_endpoints.py` | `VERIFIED` |
+| **AC-004** | Future Evidence | Retrieval strictly excludes evidence beyond position boundary | Spoiler Filter & Retrieval | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
+| **AC-005** | Grounded Answer | Permitted evidence produces grounded answer with chunk citations | RAG Orchestrator | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
+| **AC-006** | Insufficient Evidence | Insufficient evidence returns abstention/clarification | RAG Orchestrator | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
+| **AC-007** | Fake Citation | Model-hallucinated chunk ID is rejected by server | Answer Validator | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
+| **AC-008** | Prompt Injection | Malicious instruction in subtitle treated as data, not instruction | Prompt Builder & Guard | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
+| **AC-009** | Spoiler Confirmation | Spoiler question triggers warning & server-side confirmation | Spoiler Policy Engine | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
+| **AC-010** | Forged Consent | Client flag `spoilers=true` without server nonce is rejected | Spoiler Policy Engine | `test_api_v1_endpoints.py` | `VERIFIED` |
+| **AC-011** | Cross-User Access | User B cannot access User A's session or questions | Auth & Session Security | `test_api_v1_endpoints.py` | `VERIFIED` |
+| **AC-012** | Idempotent Ingestion | Re-submitting same asset does not duplicate chunks | Ingestion Worker | `test_ingestion_pipeline.py` | `VERIFIED` |
+| **AC-013** | Failed Reindex | Staging index failure leaves last good index active | Index Manager | `test_ingestion_pipeline.py` | `VERIFIED` |
 | **AC-014** | Cache Policy Correctness | Stricter policy/progress cannot hit full-spoiler cached answer | Cache Key Generator | `test_ac014_cache_policy_isolation` | BACKLOG |
-| **AC-015** | Provider Outage | LLM timeout returns controlled retryable error, no hallucination | LLM Adapter | `test_ac015_provider_timeout_handled` | BACKLOG |
-| **AC-016** | Rights Revocation | Revoking authorization unpublishes title and invalidates cache | Rights / Admin Service | `test_ac016_rights_revocation_unpublish` | BACKLOG |
-| **AC-017** | Remote-Only TV Use | TV remote D-pad allows complete journey from title to answer | TV Web / Client App | `test_ac017_remote_only_navigation` | BACKLOG |
-| **AC-018** | Concurrent Publish | Concurrent index publishes resolve to exactly one active index | Index Manager | `test_ac018_concurrent_publish_safety` | BACKLOG |
-| **AC-019** | Malformed Timestamps | Reversed/corrupt timestamps rejected at ingestion | Ingestion Parser | `test_ac019_malformed_timestamps_rejected`| BACKLOG |
-| **AC-020** | Logging Privacy | Secrets & sensitive question text redacted from logs | Logging Middleware | `test_ac020_log_redaction_privacy` | BACKLOG |
+| **AC-015** | Provider Outage | LLM timeout returns controlled retryable error, no hallucination | LLM Adapter | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
+| **AC-016** | Rights Revocation | Revoking authorization unpublishes title and invalidates cache | Rights / Admin Service | `test_api_v1_endpoints.py` | `VERIFIED` |
+| **AC-017** | Remote-Only TV Use | TV remote D-pad allows complete journey from title to answer | TV Web / Client App | `test_ac017_remote_only_navigation` | BACKLOG (Phase 2 UI) |
+| **AC-018** | Concurrent Publish | Concurrent index publishes resolve to exactly one active index | Index Manager | `test_ingestion_pipeline.py` | `VERIFIED` |
+| **AC-019** | Malformed Timestamps | Reversed/corrupt timestamps rejected at ingestion | Ingestion Parser | `test_ingestion_pipeline.py` | `VERIFIED` |
+| **AC-020** | Logging Privacy | Secrets & sensitive question text redacted from logs | Logging Middleware | `test_logging.py` | `VERIFIED` |

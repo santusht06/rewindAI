@@ -177,9 +177,46 @@
 - **Verification Commands Executed:**
   - `.venv/bin/pytest -v`: **35 passed** in 0.74s
   - `graphify update .`: Synchronized 869 nodes, 1522 edges
-- **Commit:** Pending local commit for Epic E4.
+- **Commit:** `5a20ba5` (`feat(ingestion): implement Epic E4 authorized content ingestion pipeline and admin endpoints`)
 - **Next Task:** Epic E5 & E6 — Retrieval & Grounded AI Answers (RAG Orchestrator & Spoiler Boundary Enforcement).
 - **Remote Push:** NOT PERFORMED.
+
+---
+
+## Iteration 5: Phase 1 — Retrieval, Grounded Answers & Spoiler Controls (Epics E5 & E6)
+
+### Log Entry: 2026-10-17T12:33:00Z
+- **Author:** Principal Software Architect & AI/ML Engineer
+- **Task ID:** `BE-AI-001` through `BE-AI-010`, `BE-SAFE-001` through `BE-SAFE-010`
+- **Requirements Addressed:** `SRS-SPO-001` through `SRS-SPO-006`, `AC-004`, `AC-007`, `AC-009`, `AC-010`, `AC-020`, `NFR-REL-001`, `NFR-COST-001`
+- **Status:** VERIFIED
+- **Description:**
+  1. Implemented AI model provider architecture in `services/api/ai/provider.py`:
+     - Abstract `ModelProvider` contract with structured output schema.
+     - `DeterministicMockModelProvider`: Evaluates keyword overlap, cosine ranking, and neutralizes prompt injection attempts without API cost.
+     - `GeminiModelProvider`: Production Google Gemini 1.5/2.0 adapter.
+  2. Implemented hybrid subtitle retriever in `services/api/ai/retriever.py`:
+     - `SubtitleRetriever`: Combines vector cosine similarity with keyword frequency scoring.
+     - Enforces SQL-level pre-retrieval boundary filtering: chunks with `end_time_seconds > max_boundary_seconds` are physically excluded prior to ranking (`AC-004`).
+  3. Implemented full RAG Orchestrator in `services/api/ai/orchestrator.py`:
+     - In `safe` mode: strictly gates boundary to `current_position_seconds`.
+     - Future event queries trigger `spoiler_confirmation_required` with server-issued single-use cryptographic nonce (`SRS-SPO-004`, `AC-009`).
+     - Citation verification: verifies every citation exists in the retrieved boundary set (`BE-AI-006`).
+     - Safe abstention: returns `insufficient_evidence` when no evidence exists or on out-of-domain questions (`BE-AI-007`).
+     - System prompt instructions treat transcript content as untrusted data (`BE-AI-008`).
+  4. Wired orchestrator into `POST /api/v1/sessions/{id}/questions` endpoint.
+  5. Implemented adversarial regression test suite in `tests/test_rag_and_spoiler_controls.py`:
+     - Prompt injection resistance verified.
+     - Pre-retrieval temporal boundary exclusion verified (AC-004).
+     - Full spoiler mode elevation via single-use nonce verified.
+     - Provider timeout 504 error envelope verified.
+- **Verification Commands Executed:**
+  - `.venv/bin/pytest -v`: **41 passed** in 0.91s
+  - `graphify update .`: Synchronized 939 nodes, 1715 edges
+- **Commit:** Pending local commit for Epics E5 & E6.
+- **Next Task:** Backend Acceptance Gate G1 Verification & Phase 2 Frontend Initiation.
+- **Remote Push:** NOT PERFORMED.
+
 
 
 
