@@ -15,11 +15,11 @@
 | **E0** | Discovery and repository baseline | P0 | Foundation readiness | `DONE` (Commit `5774307`) |
 | **E1** | Backend foundation (FastAPI, config, logging, health) | P0 | Reproducible startup | `VERIFIED` (Commit `c211695`) |
 | **E2** | Domain model and persistence (SQLAlchemy, migrations) | P0 | Schema & data integrity | `VERIFIED` (Commit `c506462`) |
-| **E3** | API contracts and core backend services | P0/P1 | Contract stability | `VERIFIED` |
-| **E4** | Authorized content ingestion (SRT/VTT parsing & indexing) | P1 | Idempotent indexing | `READY` |
-| **E5** | Retrieval and grounded AI answers (RAG orchestrator) | P1 | Citation validation | `READY` |
+| **E3** | API contracts and core backend services | P0/P1 | Contract stability | `VERIFIED` (Commit `d806bdf`) |
+| **E4** | Authorized content ingestion (SRT/VTT parsing & indexing) | P1 | Idempotent indexing | `VERIFIED` |
+| **E5** | Retrieval and grounded AI answers (RAG orchestrator) | P1 | Citation validation | `IN_PROGRESS` |
 | **E6** | Spoiler, authorization, and privacy enforcement | P0 (Q&A) | Server-side boundary gate | `READY` |
-| **G1** | **Backend Acceptance Gate** | **P0** | **Prerequisite for UI** | `BLOCKED` (Pending E4-E6) |
+| **G1** | **Backend Acceptance Gate** | **P0** | **Prerequisite for UI** | `BLOCKED` (Pending E5-E6) |
 | **E7** | Frontend foundation and API integration | P1 | Verified API client | `NOT_STARTED` (Gate G1) |
 | **E8** | Core Fire TV user journeys (10-ft remote D-pad) | P1 | Remote D-pad navigation | `NOT_STARTED` (Gate G1) |
 | **E9** | End-to-end integration and regression | P1 | AC-001 - AC-020 | `NOT_STARTED` |
@@ -69,19 +69,36 @@
 ### Epic E3: API Contracts and Core Endpoints
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `BE-API-001` | Define request/response schemas & error formats | P0 | E1, E2 | `VERIFIED` | `services/api/api/schemas.py` | Pending |
-| `BE-API-002` | Identity & viewer session ownership boundary | P0 | E3-001 | `VERIFIED` | `services/api/api/dependencies.py` (`get_current_user_id`) | Pending |
-| `BE-API-003` | Core business services and repository routing | P0 | E3-002 | `VERIFIED` | Clean separation between repositories & routers | Pending |
-| `BE-API-004` | Catalog/title lookup endpoints (`/api/v1/titles`) | P0 | E3-003 | `VERIFIED` | `GET /titles`, `GET /titles/{id}` (SRS-CAT-001, SRS-CAT-003) | Pending |
-| `BE-API-005` | Session/progress context endpoints (`/api/v1/sessions`) | P0 | E3-004 | `VERIFIED` | `POST /sessions`, `GET /sessions/{id}`, `PATCH progress` | Pending |
-| `BE-API-006` | Single-use spoiler confirmation & safe mode endpoints | P0 | E3-005 | `VERIFIED` | `POST spoiler-confirmation`, `POST safe-mode` (AC-009, AC-010) | Pending |
-| `BE-API-007` | Question submission contract endpoint | P0 | E3-006 | `VERIFIED` | `POST questions` with boundary gating (04_API_CONTRACT) | Pending |
-| `BE-API-008` | OpenAPI schema export for TV UI integration | P0 | E3-007 | `VERIFIED` | `docs/api/openapi.json` generated & verified | Pending |
-| `BE-API-009` | Comprehensive negative-path and contract test suite | P0 | E3-008 | `VERIFIED` | 6 integration tests in `tests/test_api_v1_endpoints.py` (26 total) | Pending |
+| `BE-API-001` | Define request/response schemas & error formats | P0 | E1, E2 | `VERIFIED` | `services/api/api/schemas.py` | `d806bdf` |
+| `BE-API-002` | Identity & viewer session ownership boundary | P0 | E3-001 | `VERIFIED` | `services/api/api/dependencies.py` (`get_current_user_id`) | `d806bdf` |
+| `BE-API-003` | Core business services and repository routing | P0 | E3-002 | `VERIFIED` | Clean separation between repositories & routers | `d806bdf` |
+| `BE-API-004` | Catalog/title lookup endpoints (`/api/v1/titles`) | P0 | E3-003 | `VERIFIED` | `GET /titles`, `GET /titles/{id}` (SRS-CAT-001, SRS-CAT-003) | `d806bdf` |
+| `BE-API-005` | Session/progress context endpoints (`/api/v1/sessions`) | P0 | E3-004 | `VERIFIED` | `POST /sessions`, `GET /sessions/{id}`, `PATCH progress` | `d806bdf` |
+| `BE-API-006` | Single-use spoiler confirmation & safe mode endpoints | P0 | E3-005 | `VERIFIED` | `POST spoiler-confirmation`, `POST safe-mode` (AC-009, AC-010) | `d806bdf` |
+| `BE-API-007` | Question submission contract endpoint | P0 | E3-006 | `VERIFIED` | `POST questions` with boundary gating (04_API_CONTRACT) | `d806bdf` |
+| `BE-API-008` | OpenAPI schema export for TV UI integration | P0 | E3-007 | `VERIFIED` | `docs/api/openapi.json` generated & verified | `d806bdf` |
+| `BE-API-009` | Comprehensive negative-path and contract test suite | P0 | E3-008 | `VERIFIED` | 6 integration tests in `tests/test_api_v1_endpoints.py` (26 total) | `d806bdf` |
+
+### Epic E4: Authorized Content Ingestion
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `BE-INGEST-001` | Supported source formats & encoding validation | P1 | E1, E2 | `VERIFIED` | SRT & WebVTT support in `services/api/ingestion/parser.py` | Pending |
+| `BE-INGEST-002` | Asset validation, size limits, and checksums | P1 | E4-001 | `VERIFIED` | SHA256 checksum calculation and empty input checks | Pending |
+| `BE-INGEST-003` | Timestamp parser and boundary validation | P1 | E4-002 | `VERIFIED` | Rejection of inverted intervals and negative timestamps | Pending |
+| `BE-INGEST-004` | Text normalization and speaker attribution | P1 | E4-003 | `VERIFIED` | HTML tag strip & speaker extraction (`clean_subtitle_text`) | Pending |
+| `BE-INGEST-005` | Deterministic chunking with timing metadata | P1 | E4-004 | `VERIFIED` | `services/api/ingestion/chunker.py` (scene-level windowing) | Pending |
+| `BE-INGEST-006` | Embedding provider interface and adapters | P1 | E4-005 | `VERIFIED` | `DeterministicMockEmbeddingProvider` & `GeminiEmbeddingProvider` | Pending |
+| `BE-INGEST-007` | Persist chunks and vector metadata in database | P1 | E4-006 | `VERIFIED` | `SubtitleChunkRepository.bulk_create` persistence | Pending |
+| `BE-INGEST-008` | Ingestion status and diagnostic reporting | P1 | E4-007 | `VERIFIED` | `IngestionResult` with counts, timing, and status | Pending |
+| `BE-INGEST-009` | Idempotency and safe reprocessing | P1 | E4-008 | `VERIFIED` | Tested duplicate submission returns existing version | Pending |
+| `BE-INGEST-010` | Staged index isolation before verification | P1 | E4-009 | `VERIFIED` | Versions remain staged until atomic publish switch | Pending |
+| `BE-INGEST-011` | Admin endpoints for ingestion & publication | P1 | E4-010 | `VERIFIED` | `POST /admin/titles/{id}/ingest`, `POST publish-version` | Pending |
+| `BE-INGEST-012` | Ingestion regression & boundary test suite | P1 | E4-011 | `VERIFIED` | 9 unit/integration tests in `tests/test_ingestion_pipeline.py` | Pending |
 
 ---
 
 ## 3. Remote Publication Status
 **Remote Push Policy:** Strictly **PROHIBITED** without explicit user authorization.  
 **Current State:** All commits exist locally on branch `main`. **No remote push performed.**
+
 

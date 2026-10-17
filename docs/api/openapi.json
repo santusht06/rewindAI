@@ -614,6 +614,145 @@
           }
         }
       }
+    },
+    "/api/v1/admin/titles/{title_id}/ingest": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Ingest Subtitle Asset",
+        "description": "Ingest, validate, chunk, embed, and stage an authorized subtitle asset.",
+        "operationId": "ingest_subtitle_asset_api_v1_admin_titles__title_id__ingest_post",
+        "parameters": [
+          {
+            "name": "title_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Title Id"
+            }
+          },
+          {
+            "name": "x-admin-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/titles/{title_id}/publish-version/{version_id}": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Publish Version",
+        "description": "Atomically activate a staged content version and publish movie.",
+        "operationId": "publish_version_api_v1_admin_titles__title_id__publish_version__version_id__post",
+        "parameters": [
+          {
+            "name": "title_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Title Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "x-admin-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Publish Version Api V1 Admin Titles  Title Id  Publish Version  Version Id  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -696,6 +835,93 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "IngestionRequest": {
+        "properties": {
+          "raw_content": {
+            "type": "string",
+            "minLength": 10,
+            "title": "Raw Content",
+            "description": "Raw SRT or WebVTT subtitle text"
+          },
+          "source_type": {
+            "type": "string",
+            "title": "Source Type",
+            "description": "Asset source format (srt, vtt)",
+            "default": "srt"
+          },
+          "auto_publish": {
+            "type": "boolean",
+            "title": "Auto Publish",
+            "description": "Whether to atomically publish upon completion",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "raw_content"
+        ],
+        "title": "IngestionRequest",
+        "description": "Payload for authorized asset ingestion."
+      },
+      "IngestionResponse": {
+        "properties": {
+          "movie_id": {
+            "type": "string",
+            "title": "Movie Id"
+          },
+          "content_version_id": {
+            "type": "string",
+            "title": "Content Version Id"
+          },
+          "version_number": {
+            "type": "integer",
+            "title": "Version Number"
+          },
+          "source_checksum": {
+            "type": "string",
+            "title": "Source Checksum"
+          },
+          "cue_count": {
+            "type": "integer",
+            "title": "Cue Count"
+          },
+          "chunk_count": {
+            "type": "integer",
+            "title": "Chunk Count"
+          },
+          "duration_seconds": {
+            "type": "number",
+            "title": "Duration Seconds"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "processing_status": {
+            "type": "string",
+            "title": "Processing Status"
+          },
+          "elapsed_milliseconds": {
+            "type": "number",
+            "title": "Elapsed Milliseconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "movie_id",
+          "content_version_id",
+          "version_number",
+          "source_checksum",
+          "cue_count",
+          "chunk_count",
+          "duration_seconds",
+          "is_active",
+          "processing_status",
+          "elapsed_milliseconds"
+        ],
+        "title": "IngestionResponse",
+        "description": "Response returned upon successful asset processing and staging."
       },
       "MovieStatus": {
         "type": "string",

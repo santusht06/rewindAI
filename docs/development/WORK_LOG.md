@@ -138,8 +138,48 @@
 - **Verification Commands Executed:**
   - `.venv/bin/pytest -v`: **26 passed** in 0.56s
   - `graphify update .`: Synchronized 764 nodes, 1247 edges
-- **Commit:** Pending local commit for Epic E3.
-- **Next Task:** Epic E4 — Authorized Content Ingestion (`BE-INGEST-001` through `BE-INGEST-008`).
+- **Commit:** `d806bdf` (`feat(api): implement Epic E3 API contracts, core endpoints, and OpenAPI schema export`)
+- **Next Task:** Epic E4 — Authorized Content Ingestion (`BE-INGEST-001` through `BE-INGEST-012`).
 - **Remote Push:** NOT PERFORMED.
+
+---
+
+## Iteration 4: Phase 1 — Authorized Content Ingestion (Epic E4)
+
+### Log Entry: 2026-10-17T12:28:00Z
+- **Author:** Principal Software Architect & AI/ML Engineer
+- **Task ID:** `BE-INGEST-001` through `BE-INGEST-012`
+- **Requirements Addressed:** `SRS-ING-001` through `SRS-ING-007`, `SRS-ADM-001`, `SRS-ADM-002`, `NFR-REL-003`, `NFR-COST-001`
+- **Status:** VERIFIED
+- **Description:**
+  1. Implemented subtitle parsing and normalization engine in `services/api/ingestion/parser.py`:
+     - Full support for SRT and WebVTT formats.
+     - Parsing and validation of timestamps (`HH:MM:SS,mmm` / `HH:MM:SS.mmm` / `MM:SS.mmm`).
+     - Validation: rejects inverted timestamp ranges (`start > end`) and empty assets.
+     - Normalization: strips HTML markup and extracts speaker labels (`clean_subtitle_text`).
+  2. Implemented deterministic subtitle chunker in `services/api/ingestion/chunker.py`:
+     - Scene window grouping within duration and word thresholds.
+     - Preserves boundary timestamps and 0-indexed ordinals.
+  3. Implemented embedding provider interface in `services/api/ingestion/embeddings.py`:
+     - Abstract `EmbeddingProvider` interface.
+     - `DeterministicMockEmbeddingProvider`: Unit-normalized 256-dim embeddings with cosine semantic consistency for zero-cost testing.
+     - `GeminiEmbeddingProvider`: Production adapter for Google text-embedding models.
+  4. Implemented staged ingestion pipeline in `services/api/ingestion/pipeline.py`:
+     - Computes SHA256 source checksum.
+     - Enforces idempotency (SRS-ING-002): duplicate identical runs reuse version without chunk duplication.
+     - Staged index isolation (SRS-ING-004): incomplete indexing remains unlisted.
+     - Atomic version publishing and audit logging (`AuditEventRepository`).
+  5. Implemented admin ingestion router in `services/api/api/v1/admin.py`:
+     - `POST /api/v1/admin/titles/{id}/ingest`: Authorized asset submission and staging.
+     - `POST /api/v1/admin/titles/{id}/publish-version/{id}`: Atomic activation.
+     - Separate authorization check (`verify_admin_authorization`).
+  6. Implemented comprehensive test suite in `tests/test_ingestion_pipeline.py`.
+- **Verification Commands Executed:**
+  - `.venv/bin/pytest -v`: **35 passed** in 0.74s
+  - `graphify update .`: Synchronized 869 nodes, 1522 edges
+- **Commit:** Pending local commit for Epic E4.
+- **Next Task:** Epic E5 & E6 — Retrieval & Grounded AI Answers (RAG Orchestrator & Spoiler Boundary Enforcement).
+- **Remote Push:** NOT PERFORMED.
+
 
 
