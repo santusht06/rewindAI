@@ -57,4 +57,5 @@ graphify-out/
 *.sqlite
 *.sqlite3
 scratch/
+ops/backups/
 
