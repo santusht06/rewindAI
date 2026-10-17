@@ -1,0 +1,11 @@
+stateDiagram-v2
+    [*] --> NoSession
+    NoSession --> SafeMode: Select movie and position
+    SafeMode --> SafeMode: Ask question / recap / explain
+    SafeMode --> ConfirmationRequired: Request full spoilers
+    ConfirmationRequired --> SafeMode: Cancel or decline
+    ConfirmationRequired --> FullSpoilerMode: Explicitly confirm
+    FullSpoilerMode --> FullSpoilerMode: Ask full-story question
+    FullSpoilerMode --> SafeMode: Switch back to safe mode
+    SafeMode --> NoSession: End session
+    FullSpoilerMode --> NoSession: End session

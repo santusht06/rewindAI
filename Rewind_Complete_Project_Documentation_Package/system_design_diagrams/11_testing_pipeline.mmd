@@ -1,0 +1,11 @@
+flowchart TD
+    A["Unit Tests"] --> E["Automated Test Pipeline"]
+    B["Retrieval Quality Tests"] --> E
+    C["Spoiler Leakage Tests"] --> E
+    D["API and Integration Tests"] --> E
+    E --> F["Fire TV UI Tests"]
+    F --> G["End-to-End Demo Scenarios"]
+    G --> H{"Acceptance Criteria Passed?"}
+    H -->|"No"| I["Fix and Retest"]
+    I --> E
+    H -->|"Yes"| J["Release Candidate"]

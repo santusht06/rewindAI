@@ -1,0 +1,14 @@
+flowchart TB
+    TV["Fire TV App"] -->|"HTTPS"| EDGE["TLS Endpoint / Reverse Proxy"]
+    EDGE --> API["FastAPI Application"]
+    API --> PG[("PostgreSQL + pgvector")]
+    API -.-> CACHE[("Optional Redis")]
+    API --> LLM["External LLM API"]
+    API --> EMB["Embedding API"]
+
+    ADMIN["Authorized Content Admin"] --> INGEST["Ingestion Command / Worker"]
+    INGEST --> PG
+    INGEST --> EMB
+
+    API --> LOGS["Structured Logs + Metrics"]
+    INGEST --> LOGS

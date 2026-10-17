@@ -1,0 +1,21 @@
+flowchart TD
+    A["Question from Fire TV"] --> B["Validate request"]
+    B --> C["Load session and movie"]
+    C --> D["Resolve playback position and spoiler mode"]
+    D --> E{"Full spoilers confirmed?"}
+    E -->|"No / safe mode"| F["Create safe retrieval policy"]
+    E -->|"Yes"| G["Create full-story retrieval policy"]
+    F --> H["Hybrid retrieval with policy filters"]
+    G --> H
+    H --> I["Rank and deduplicate evidence"]
+    I --> J["Check evidence coverage"]
+    J --> K{"Enough evidence?"}
+    K -->|"No"| L["Clarify or report insufficient evidence"]
+    K -->|"Yes"| M["Build bounded LLM context"]
+    M --> N["Generate structured answer"]
+    N --> O["Validate sources and spoiler policy"]
+    O --> P{"Response passes?"}
+    P -->|"No"| Q["Reject, regenerate safely, or abstain"]
+    P -->|"Yes"| R["Return answer and source timestamps"]
+    L --> S["Return safe response"]
+    Q --> S

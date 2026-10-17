@@ -1,0 +1,49 @@
+flowchart LR
+    VIEWER["Viewer"]
+    ADMIN["Content Administrator"]
+    PROVIDER["LLM / Embedding Provider"]
+    SOURCES["Authorized Content Source"]
+
+    subgraph REWIND["Rewind System"]
+        UC1(["Browse supported movies"])
+        UC2(["Select movie and position"])
+        UC3(["Ask story question"])
+        UC4(["Catch me up"])
+        UC5(["Explain character"])
+        UC6(["Translate dialogue"])
+        UC7(["Explain cultural context"])
+        UC8(["Choose spoiler mode"])
+        UC9(["Confirm full spoilers"])
+        UC10(["View answer and source timestamps"])
+        UC11(["Ingest authorized subtitles"])
+        UC12(["Review story facts"])
+        UC13(["Generate embeddings"])
+        UC14(["Retrieve permitted context"])
+        UC15(["Generate grounded response"])
+    end
+
+    VIEWER --> UC1
+    VIEWER --> UC2
+    VIEWER --> UC3
+    VIEWER --> UC4
+    VIEWER --> UC5
+    VIEWER --> UC6
+    VIEWER --> UC7
+    VIEWER --> UC8
+    VIEWER --> UC9
+    VIEWER --> UC10
+
+    ADMIN --> UC11
+    ADMIN --> UC12
+    UC11 --> UC13
+
+    UC3 --> UC14
+    UC4 --> UC14
+    UC5 --> UC14
+    UC6 --> UC15
+    UC7 --> UC15
+    UC14 --> UC15
+    UC15 --> UC10
+    PROVIDER --> UC13
+    PROVIDER --> UC15
+    SOURCES --> UC11

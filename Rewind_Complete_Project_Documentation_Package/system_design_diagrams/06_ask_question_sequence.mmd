@@ -1,0 +1,30 @@
+sequenceDiagram
+    actor U as Viewer
+    participant TV as Fire TV App
+    participant API as FastAPI
+    participant POL as Spoiler Policy
+    participant RET as Retrieval Service
+    participant DB as PostgreSQL + pgvector
+    participant LLM as LLM Provider
+
+    U->>TV: Enter/select question
+    TV->>API: POST /api/v1/ask
+    API->>API: Validate session and request
+    API->>POL: Resolve permitted story boundary
+    POL-->>API: Retrieval policy
+    API->>RET: Query + movie + policy
+    RET->>DB: Filtered keyword/vector search
+    DB-->>RET: Candidate chunks and facts
+    RET->>RET: Rank and deduplicate
+    RET-->>API: Permitted evidence
+
+    alt Sufficient evidence
+        API->>LLM: Bounded context + answer instructions
+        LLM-->>API: Structured answer
+        API->>API: Validate evidence and policy
+        API-->>TV: Answer + sources
+    else Insufficient evidence
+        API-->>TV: Cannot answer reliably from available content
+    end
+
+    TV-->>U: Display answer

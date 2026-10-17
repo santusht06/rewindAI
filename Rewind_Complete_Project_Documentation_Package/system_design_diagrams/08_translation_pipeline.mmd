@@ -1,0 +1,14 @@
+flowchart TD
+    A["User selects Translate"] --> B["Select subtitle line or enter text"]
+    B --> C["Validate source text"]
+    C --> D["Resolve target language"]
+    D --> E["Translation Service"]
+    E --> F["Translate original meaning"]
+    F --> G{"Context explanation requested?"}
+    G -->|"No"| H["Return original + translation"]
+    G -->|"Yes"| I["Retrieve permitted story context"]
+    I --> J["Explain idiom, tone, or cultural reference"]
+    J --> K["Validate explanation"]
+    K --> L["Return contextual translation"]
+    H --> M["Render TV response"]
+    L --> M

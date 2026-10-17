@@ -1,0 +1,16 @@
+flowchart TD
+    A["Authorized SRT / VTT / Transcript"] --> B["Validate file and encoding"]
+    B --> C["Parse subtitle entries"]
+    C --> D["Normalize text and timestamps"]
+    D --> E["Deduplicate and validate ordering"]
+    E --> F["Create timestamped chunks"]
+    F --> G["Generate embeddings"]
+    F --> H["Persist chunk text and metadata"]
+    G --> I["Persist vectors"]
+    H --> J[("PostgreSQL")]
+    I --> K[("pgvector index")]
+    F --> L["Optional story-fact extraction"]
+    L --> M["Human review / validation"]
+    M --> J
+    J --> N["Mark content version ready"]
+    K --> N

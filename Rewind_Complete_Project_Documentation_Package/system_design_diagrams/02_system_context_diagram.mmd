@@ -1,0 +1,33 @@
+flowchart TB
+    USER["Viewer"]
+    ADMIN["Content Admin"]
+    TV["Rewind Fire TV App"]
+
+    subgraph TRUST["Rewind-controlled infrastructure"]
+        API["API / Application Backend"]
+        CONTENT["Content Ingestion Pipeline"]
+        DB[("PostgreSQL + pgvector")]
+        POLICY["Spoiler Policy Engine"]
+        AI["AI Orchestration"]
+    end
+
+    LLM["External LLM Provider"]
+    EMB["Embedding Provider"]
+    FILES["Authorized Subtitle Files"]
+    PLAYER["Supported Playback Context Source"]
+
+    USER --> TV
+    TV <-->|"HTTPS / JSON"| API
+    PLAYER -->|"Movie ID + position"| TV
+
+    API --> POLICY
+    API --> CONTENT
+    POLICY --> DB
+    POLICY --> AI
+    AI --> DB
+    AI <-->|"Approved context / response"| LLM
+    CONTENT --> DB
+    FILES --> CONTENT
+    ADMIN --> CONTENT
+    CONTENT --> EMB
+    EMB --> CONTENT

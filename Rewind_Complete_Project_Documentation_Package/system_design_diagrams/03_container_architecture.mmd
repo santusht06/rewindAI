@@ -1,0 +1,49 @@
+flowchart TB
+    subgraph DEVICE["Fire TV Device"]
+        UI["Rewind UI"]
+        NAV["D-pad Navigation"]
+        CLIENT["API Client"]
+        UI --> NAV
+        UI --> CLIENT
+    end
+
+    subgraph SERVER["Backend Deployment"]
+        ROUTER["FastAPI Routes"]
+        SESSION["Session / Context Service"]
+        QUERY["Query Orchestrator"]
+        POLICY["Spoiler Policy Service"]
+        RETRIEVER["Hybrid Retrieval Service"]
+        BUILDER["Context Builder"]
+        LLMCLIENT["LLM Provider Adapter"]
+        VALIDATOR["Answer Validator"]
+        INGEST["Ingestion Worker"]
+
+        ROUTER --> SESSION
+        ROUTER --> QUERY
+        QUERY --> POLICY
+        POLICY --> RETRIEVER
+        RETRIEVER --> BUILDER
+        BUILDER --> LLMCLIENT
+        LLMCLIENT --> VALIDATOR
+    end
+
+    subgraph DATA["Data Stores"]
+        PG[("PostgreSQL")]
+        VEC[("pgvector")]
+        CACHE[("Optional Redis")]
+        OBJECT[("Optional Object Storage")]
+    end
+
+    PROVIDER["LLM API"]
+    EMBED["Embedding API"]
+
+    CLIENT <-->|HTTPS| ROUTER
+    SESSION <--> PG
+    RETRIEVER <--> PG
+    RETRIEVER <--> VEC
+    QUERY <--> CACHE
+    INGEST <--> PG
+    INGEST <--> VEC
+    INGEST --> OBJECT
+    LLMCLIENT <-->|HTTPS| PROVIDER
+    INGEST <-->|HTTPS| EMBED

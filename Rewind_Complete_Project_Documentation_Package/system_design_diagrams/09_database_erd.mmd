@@ -1,0 +1,62 @@
+erDiagram
+    MOVIE ||--o{ CONTENT_VERSION : has
+    CONTENT_VERSION ||--o{ SUBTITLE_CHUNK : contains
+    CONTENT_VERSION ||--o{ STORY_FACT : describes
+    MOVIE ||--o{ VIEWING_SESSION : selected_in
+    VIEWING_SESSION ||--o{ QUESTION : receives
+    QUESTION ||--o{ ANSWER_SOURCE : cites
+    SUBTITLE_CHUNK ||--o{ ANSWER_SOURCE : supports
+    STORY_FACT ||--o{ ANSWER_SOURCE : supports
+
+    MOVIE {
+        uuid id PK
+        string title
+        string language
+        string status
+    }
+
+    CONTENT_VERSION {
+        uuid id PK
+        uuid movie_id FK
+        string source_type
+        string version_hash
+        string processing_status
+    }
+
+    SUBTITLE_CHUNK {
+        uuid id PK
+        uuid content_version_id FK
+        int start_time_seconds
+        int end_time_seconds
+        text text
+        vector embedding
+    }
+
+    STORY_FACT {
+        uuid id PK
+        uuid content_version_id FK
+        text fact
+        int first_known_at_seconds
+        string validation_status
+    }
+
+    VIEWING_SESSION {
+        uuid id PK
+        uuid movie_id FK
+        int current_position_seconds
+        string spoiler_mode
+        boolean full_spoilers_confirmed
+    }
+
+    QUESTION {
+        uuid id PK
+        uuid session_id FK
+        text question_text
+        string request_type
+    }
+
+    ANSWER_SOURCE {
+        uuid question_id FK
+        uuid chunk_id FK
+        uuid story_fact_id FK
+    }
