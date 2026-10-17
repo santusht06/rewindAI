@@ -61,6 +61,47 @@
      - `tests/test_health_and_errors.py`
 - **Verification Commands Executed:**
   - `.venv/bin/pytest -v`: **14 passed** in 0.20s
-- **Commit:** Pending local commit for Epic E1.
-- **Next Task:** Epic E2 — Domain Model and Persistence (`BE-DATA-001` through `BE-DATA-006`).
+- **Commit:** `c211695` (`feat(backend-foundation): implement Epic E1 backend foundation and test harness`)
+- **Next Task:** Epic E2 — Domain Model and Persistence (`BE-DATA-001` through `BE-DATA-008`).
 - **Remote Push:** NOT PERFORMED.
+
+---
+
+## Iteration 2: Phase 1 — Domain Model and Persistence (Epic E2)
+
+### Log Entry: 2026-10-17T12:15:00Z
+- **Author:** Principal Software Architect & Senior Backend Engineer
+- **Task ID:** `BE-DATA-001` through `BE-DATA-008`
+- **Requirements Addressed:** `SRS-CAT-001`, `SRS-CAT-002`, `SRS-CAT-003`, `SRS-SPO-001`, `SRS-SPO-002`, `SRS-SPO-004`, `AC-004`, `AC-009`, `AC-010`
+- **Status:** VERIFIED
+- **Description:**
+  1. Implemented domain entities and value objects in `services/api/domain/models.py`:
+     - Enums: `MovieStatus`, `ContentProcessingStatus`, `ProgressSource`, `SpoilerMode`, `QuestionStatus`, `AuditEventAction`.
+     - Domain models: `Movie`, `ContentVersion`, `SubtitleChunk`, `StoryFact`, `ViewingSession`, `Question`, `AnswerSource`, `AuditEvent`.
+  2. Implemented database schema and relational tables with strict constraints in `services/api/infrastructure/tables.py`:
+     - Added foreign keys with cascading where appropriate.
+     - Enforced `check_end_after_start` (`end_time_seconds >= start_time_seconds`) and non-negative constraints.
+     - Added unique constraint on `(movie_id, version_tag)`.
+     - Added indexing for fast retrieval on `(movie_id, end_time_seconds)`.
+  3. Configured Alembic async migration suite in `services/api/alembic/` and generated initial migration `0cb724f2f5e5_create_initial_rewind_tables.py`. Successfully ran `alembic upgrade head`.
+  4. Implemented async data-access repositories in `services/api/infrastructure/repositories.py`:
+     - `MovieRepository`: List published movies, fetch by ID.
+     - `ContentVersionRepository`: Atomic version publishing (`publish_version`) guaranteeing single active version per title.
+     - `SubtitleChunkRepository`: Pre-retrieval temporal spoiler boundary chunk query (`get_chunks_within_boundary`).
+     - `ViewingSessionRepository`: Session creation, update progress with monotonic checking, single-use spoiler confirmation nonces, and safe-mode revert.
+     - `QuestionRepository`: Question audit and citation linking.
+     - `AuditEventRepository`: Structured security and compliance audit logging.
+  5. Implemented comprehensive test suite in `tests/test_domain_and_persistence.py` verifying:
+     - Title listing and filtering.
+     - Atomic active version transitions.
+     - Temporal chunk boundary enforcement (`end_time_seconds <= current_position`).
+     - Check constraint validation (rejection of inverted timestamp intervals).
+     - Single-use spoiler confirmation nonce consumption.
+     - Rollback on database errors.
+- **Verification Commands Executed:**
+  - `.venv/bin/pytest -v`: **20 passed** in 0.35s
+  - `.venv/bin/alembic upgrade head`: OK
+- **Commit:** Pending local commit for Epic E2.
+- **Next Task:** Epic E3 — API Contracts and Core Endpoints (`BE-API-001` through `BE-API-008`).
+- **Remote Push:** NOT PERFORMED.
+

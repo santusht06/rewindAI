@@ -13,13 +13,13 @@
 | Phase | Description | Priority | Gate / Target | Status |
 |---|---|---|---|---|
 | **E0** | Discovery and repository baseline | P0 | Foundation readiness | `DONE` (Commit `5774307`) |
-| **E1** | Backend foundation (FastAPI, config, logging, health) | P0 | Reproducible startup | `VERIFIED` |
-| **E2** | Domain model and persistence (SQLAlchemy, migrations) | P0 | Schema & data integrity | `READY` |
-| **E3** | API contracts and core backend services | P0/P1 | Contract stability | `READY` |
+| **E1** | Backend foundation (FastAPI, config, logging, health) | P0 | Reproducible startup | `VERIFIED` (Commit `c211695`) |
+| **E2** | Domain model and persistence (SQLAlchemy, migrations) | P0 | Schema & data integrity | `VERIFIED` |
+| **E3** | API contracts and core backend services | P0/P1 | Contract stability | `IN_PROGRESS` |
 | **E4** | Authorized content ingestion (SRT/VTT parsing & indexing) | P1 | Idempotent indexing | `READY` |
 | **E5** | Retrieval and grounded AI answers (RAG orchestrator) | P1 | Citation validation | `READY` |
 | **E6** | Spoiler, authorization, and privacy enforcement | P0 (Q&A) | Server-side boundary gate | `READY` |
-| **G1** | **Backend Acceptance Gate** | **P0** | **Prerequisite for UI** | `BLOCKED` (Pending E2-E6) |
+| **G1** | **Backend Acceptance Gate** | **P0** | **Prerequisite for UI** | `BLOCKED` (Pending E3-E6) |
 | **E7** | Frontend foundation and API integration | P1 | Verified API client | `NOT_STARTED` (Gate G1) |
 | **E8** | Core Fire TV user journeys (10-ft remote D-pad) | P1 | Remote D-pad navigation | `NOT_STARTED` (Gate G1) |
 | **E9** | End-to-end integration and regression | P1 | AC-001 - AC-020 | `NOT_STARTED` |
@@ -43,26 +43,28 @@
 ### Epic E1: Backend Foundation
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `BE-FOUND-001` | Confirm backend stack & project structure | P0 | E0 | `VERIFIED` | Python 3.12 / FastAPI in `services/api/` | Pending |
-| `BE-FOUND-002` | Local setup, `pyproject.toml`, and `.venv` | P0 | E0 | `VERIFIED` | `.venv` created with FastAPI, Pydantic v2, pytest | Pending |
-| `BE-FOUND-003` | Typed configuration loading & secret validation | P0 | E1-002 | `VERIFIED` | `services/api/config.py` with `SecretStr` | Pending |
-| `BE-FOUND-004` | Provide safe `.env.example` with placeholders | P0 | E1-003 | `VERIFIED` | `.env.example` verified with no secrets | Pending |
-| `BE-FOUND-005` | Structured logs, request IDs, and redaction | P0 | E1-003 | `VERIFIED` | `services/api/logging.py` (NFR-PRIV-001, AC-020) | Pending |
-| `BE-FOUND-006` | Error envelope & typed exception hierarchy | P0 | E1-005 | `VERIFIED` | `services/api/errors.py` (04_API_CONTRACT) | Pending |
-| `BE-FOUND-007` | Request validation & API schema generation | P0 | E1-006 | `VERIFIED` | `services/api/main.py` entrypoint | Pending |
-| `BE-FOUND-008` | Liveness & readiness endpoints (`/health/live`, `/ready`) | P0 | E1-007 | `VERIFIED` | Tested in `test_health_and_errors.py` (200 OK) | Pending |
-| `BE-FOUND-009` | Test framework, fixtures, and unit test suite | P0 | E1-007 | `VERIFIED` | 14 tests passing across 3 test modules | Pending |
-| `BE-FOUND-010` | Baseline formatting, linting, and quality checks | P0 | E1-009 | `VERIFIED` | `.venv/bin/pytest -v` (14/14 passed) | Pending |
+| `BE-FOUND-001` | Confirm backend stack & project structure | P0 | E0 | `VERIFIED` | Python 3.12 / FastAPI in `services/api/` | `c211695` |
+| `BE-FOUND-002` | Local setup, `pyproject.toml`, and `.venv` | P0 | E0 | `VERIFIED` | `.venv` created with FastAPI, Pydantic v2, pytest | `c211695` |
+| `BE-FOUND-003` | Typed configuration loading & secret validation | P0 | E1-002 | `VERIFIED` | `services/api/config.py` with `SecretStr` | `c211695` |
+| `BE-FOUND-004` | Provide safe `.env.example` with placeholders | P0 | E1-003 | `VERIFIED` | `.env.example` verified with no secrets | `c211695` |
+| `BE-FOUND-005` | Structured logs, request IDs, and redaction | P0 | E1-003 | `VERIFIED` | `services/api/logging.py` (NFR-PRIV-001, AC-020) | `c211695` |
+| `BE-FOUND-006` | Error envelope & typed exception hierarchy | P0 | E1-005 | `VERIFIED` | `services/api/errors.py` (04_API_CONTRACT) | `c211695` |
+| `BE-FOUND-007` | Request validation & API schema generation | P0 | E1-006 | `VERIFIED` | `services/api/main.py` entrypoint | `c211695` |
+| `BE-FOUND-008` | Liveness & readiness endpoints (`/health/live`, `/ready`) | P0 | E1-007 | `VERIFIED` | Tested in `test_health_and_errors.py` (200 OK) | `c211695` |
+| `BE-FOUND-009` | Test framework, fixtures, and unit test suite | P0 | E1-007 | `VERIFIED` | 14 tests passing across 3 test modules | `c211695` |
+| `BE-FOUND-010` | Baseline formatting, linting, and quality checks | P0 | E1-009 | `VERIFIED` | `.venv/bin/pytest -v` (14/14 passed) | `c211695` |
 
 ### Epic E2: Domain Model and Persistence
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `BE-DATA-001` | Implement domain entities & invariants | P0 | E1 | `READY` | `Movie`, `ContentVersion`, `SubtitleChunk`, etc. | — |
-| `BE-DATA-002` | Database schema & versioned migrations | P0 | E2-001 | `READY` | Alembic migration scripts | — |
-| `BE-DATA-003` | Foreign keys, unique constraints, and indexes | P0 | E2-002 | `READY` | Relational integrity rules | — |
-| `BE-DATA-004` | Data-access / repository boundaries & transactions | P0 | E2-003 | `READY` | SQLAlchemy 2.0 async sessions | — |
-| `BE-DATA-005` | Test persistence, rollback, and constraints | P0 | E2-004 | `READY` | Automated database test suite | — |
-| `BE-DATA-006` | Verify safe repeatability and write integrity | P0 | E2-005 | `READY` | Duplicate suppression verification | — |
+| `BE-DATA-001` | Implement domain entities & invariants | P0 | E1 | `VERIFIED` | `services/api/domain/models.py` (Enums, dataclasses/models) | Pending |
+| `BE-DATA-002` | Database schema & versioned migrations | P0 | E2-001 | `VERIFIED` | Alembic migration `0cb724f2f5e5_create_initial_rewind_tables.py` | Pending |
+| `BE-DATA-003` | Foreign keys, unique constraints, and indexes | P0 | E2-002 | `VERIFIED` | `services/api/infrastructure/tables.py` relational integrity | Pending |
+| `BE-DATA-004` | Data-access / repository boundaries & transactions | P0 | E2-003 | `VERIFIED` | `services/api/infrastructure/repositories.py` async repos | Pending |
+| `BE-DATA-005` | Test persistence, rollback, and constraints | P0 | E2-004 | `VERIFIED` | 6 async DB tests in `test_domain_and_persistence.py` | Pending |
+| `BE-DATA-006` | Verify safe repeatability and write integrity | P0 | E2-005 | `VERIFIED` | Uniqueness & duplicate suppression verified | Pending |
+| `BE-DATA-007` | Pre-retrieval temporal spoiler boundary filtering | P0 | E2-004 | `VERIFIED` | SubtitleChunkRepository temporal filtering | Pending |
+| `BE-DATA-008` | Single-use spoiler confirmation nonce validation | P0 | E2-004 | `VERIFIED` | ViewingSessionRepository nonce consumption | Pending |
 
 ---
 
