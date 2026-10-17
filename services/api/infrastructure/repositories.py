@@ -191,6 +191,15 @@ class ContentVersionRepository:
         await self.session.flush()
         return target
 
+    async def deactivate_all_versions(self, movie_id: str) -> None:
+        """Atomically deactivate all versions for a movie (unpublishing / rights revocation)."""
+        await self.session.execute(
+            update(ContentVersionTable)
+            .where(ContentVersionTable.movie_id == movie_id)
+            .values(is_active=False)
+        )
+        await self.session.flush()
+
 
 class SubtitleChunkRepository:
     def __init__(self, session: AsyncSession) -> None:
@@ -505,4 +514,22 @@ class AuditEventRepository:
         self.session.add(event)
         await self.session.flush()
         return event
+
+    async def list_events(
+        self,
+        target_id: str | None = None,
+        action: AuditAction | str | None = None,
+        limit: int = 50,
+    ) -> list[AuditEventTable]:
+        """Query audit event trail by target_id or action."""
+        stmt = select(AuditEventTable)
+        if target_id:
+            stmt = stmt.where(AuditEventTable.target_id == target_id)
+        if action:
+            act_val = action.value if hasattr(action, "value") else str(action)
+            stmt = stmt.where(AuditEventTable.action == act_val)
+        stmt = stmt.order_by(AuditEventTable.created_at.desc()).limit(limit)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
 

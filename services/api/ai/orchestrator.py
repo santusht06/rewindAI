@@ -9,6 +9,7 @@ Adheres strictly to:
 
 from datetime import datetime, timezone
 import re
+import time
 from typing import Any
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.api.api.schemas import CitationSchema, QuestionResponse
 from services.api.ai.provider import ModelProvider, get_model_provider
 from services.api.ai.retriever import SubtitleRetriever
+from services.api.telemetry import telemetry
 from services.api.domain.models import (
     AuditEventAction,
     QuestionStatus,
@@ -60,6 +62,8 @@ class RagOrchestrator:
         client_request_id: str | None = None,
     ) -> QuestionResponse:
         """Process a question through retrieval and spoiler guardrails."""
+        start_time = time.perf_counter()
+        telemetry.record_request()
         now = datetime.now(timezone.utc)
 
         # 1. Fetch and validate session
@@ -82,6 +86,8 @@ class RagOrchestrator:
 
         if not active_version:
             # Title has no active index (04_API_CONTRACT: unsupported_title)
+            telemetry.record_latency("question_answering", (time.perf_counter() - start_time) * 1000)
+            telemetry.record_outcome("unsupported_title")
             return QuestionResponse(
                 question_id=str(uuid.uuid4()),
                 session_id=sess.id,
@@ -135,6 +141,8 @@ class RagOrchestrator:
                 },
             )
 
+            telemetry.record_latency("question_answering", (time.perf_counter() - start_time) * 1000)
+            telemetry.record_outcome("spoiler_confirmation_required")
             return QuestionResponse(
                 question_id=question_record.id,
                 session_id=sess.id,
@@ -158,12 +166,14 @@ class RagOrchestrator:
         )
 
         # 7. Execute bounded candidate retrieval
+        retrieval_start = time.perf_counter()
         candidates = await self.retriever.retrieve_candidates(
             content_version_id=active_version.id,
             query=question_text,
             max_boundary_seconds=max_boundary,
             limit=5,
         )
+        telemetry.record_latency("retrieval", (time.perf_counter() - retrieval_start) * 1000)
 
         if not candidates:
             # Safe abstention (BE-AI-007)
@@ -171,6 +181,8 @@ class RagOrchestrator:
                 question_record.id,
                 QuestionStatus.INSUFFICIENT_EVIDENCE,
             )
+            telemetry.record_latency("question_answering", (time.perf_counter() - start_time) * 1000)
+            telemetry.record_outcome("insufficient_evidence")
             return QuestionResponse(
                 question_id=question_record.id,
                 session_id=sess.id,
@@ -182,12 +194,14 @@ class RagOrchestrator:
             )
 
         # 8. Call Model Provider with bounded context
+        model_start = time.perf_counter()
         model_output = await self.model_provider.generate_grounded_answer(
             question=question_text,
             context_chunks=candidates,
             playback_position_seconds=sess.current_position_seconds,
             spoiler_mode=spoiler_mode_str,
         )
+        telemetry.record_latency("model_inference", (time.perf_counter() - model_start) * 1000)
 
         outcome = model_output.get("outcome", "answered")
         raw_answer = model_output.get("answer")
@@ -253,6 +267,17 @@ class RagOrchestrator:
                 "citation_count": len(verified_citations),
             },
         )
+
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        telemetry.record_latency("question_answering", duration_ms)
+        telemetry.record_outcome(outcome)
+
+        # Estimate tokens and cost (Gemini Flash baseline)
+        context_chars = sum(len(c.get("text", "")) for c in candidates)
+        prompt_toks = max(15, (len(question_text) + context_chars) // 4)
+        completion_toks = max(10, len(raw_answer or "") // 4)
+        cost_usd = (prompt_toks * 0.000000075) + (completion_toks * 0.0000003)
+        telemetry.record_token_usage(prompt_toks, completion_toks, cost_usd)
 
         return QuestionResponse(
             question_id=question_record.id,

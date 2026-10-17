@@ -260,9 +260,55 @@
 - **Verification Commands Executed:**
   - `.venv/bin/pytest -v`: **45 passed in 0.93s** across 9 test suites
   - `graphify update .`: Synchronized knowledge graph
-- **Commit:** Pending local commit for Epics E7, E8, and E9.
-- **Next Task:** Production Release Candidate & Final Verification Sign-Off.
+- **Commit:** `020fbd3`: `feat(tv-client): implement Phase 2 10-foot Fire TV UX, spatial D-pad engine, and end-to-end regression suite`
+- **Next Task:** Epics E10 & E11 (Operational Readiness & Release Hardening).
 - **Remote Push:** NOT PERFORMED.
+
+---
+
+## 2026-10-17 — Phase 3: Epics E10 & E11 (Operational Readiness, Rate Limiting, Rights Revocation & Disaster Recovery)
+
+- **Goal:** Implement production-grade operational telemetry, sliding-window rate limiting, admin title unpublishing/revocation (`AC-016`), automated disaster recovery backup/restore scripts, operational runbooks, and comprehensive verification suite.
+- **Actions Taken:**
+  1. Thread-Safe Operational Telemetry Registry (`services/api/telemetry.py`):
+     - In-memory thread-safe metrics collector (`TelemetryRegistry`).
+     - Real-time calculation of latency percentiles (`p50`, `p95`, `p99`) across operations.
+     - Token accounting (prompt tokens, completion tokens, total tokens) and estimated USD cost tracking.
+     - Outcome distribution counter without leaking sensitive user text or secrets (`OPS-001`, `OPS-004`).
+  2. Health Metrics Probes (`services/api/main.py`):
+     - Mounted `GET /health/metrics` and `GET /metrics` alias returning real-time telemetry summary.
+     - Integrated HTTP request duration and status code outcomes into `RequestCorrelationMiddleware`.
+  3. Sliding-Window Rate Limiter (`services/api/rate_limiting.py` & `services/api/api/v1/questions.py`):
+     - `SlidingWindowRateLimiter` managing in-memory request timestamps per viewer/IP.
+     - Fast route-level dependency attached to `POST /api/v1/sessions/{id}/questions`.
+     - Returns standard HTTP 429 `AppException` with code `RATE_LIMIT_EXCEEDED` and `retry_after_seconds` detail (`OPS-003`, `NFR-SCALE-001`).
+  4. Content Rights Revocation & Instant Unpublishing (`services/api/api/v1/admin.py` & `repositories.py`):
+     - Added `deactivate_all_versions` to `ContentVersionRepository`.
+     - Implemented `POST /api/v1/admin/titles/{id}/unpublish` endpoint.
+     - Atomically sets movie status to `DRAFT` and deactivates all active versions to prevent indexing.
+     - Records permanent audit event with `AuditAction.UNPUBLISH` (`OPS-006`, `AC-016`).
+     - Added `list_events` query helper to `AuditEventRepository`.
+  5. Automated Database Disaster Recovery Script (`ops/scripts/backup_restore.py`):
+     - Atomic online SQLite snapshot using SQLite Online Backup API.
+     - Cryptographic SHA-256 calculation and metadata manifest with table row counts (`NFR-DR-001`).
+     - Structural integrity verification via `PRAGMA integrity_check`.
+     - Atomic restore workflow verifying checksum against manifest prior to replacement (`OPS-005`, `REL-004`).
+  6. Operational Runbooks & Playbooks:
+     - `ops/runbooks/OPERATIONAL_RUNBOOK.md`: Architecture topology, configuration table, health probes, SLO alerts, backup schedule, and rights revocation workflow (`OPS-008`).
+     - `ops/runbooks/INCIDENT_RESPONSE.md`: Severity matrix (SEV-1 through SEV-3), on-call escalation, SEV-1 spoiler leak containment procedure, and post-mortem template (`OPS-008`, `REL-005`).
+  7. Operational Regression Test Suite (`tests/test_operational_readiness.py`):
+     - `test_health_metrics_endpoint`: Validates `/health/metrics` payload and percentiles.
+     - `test_sliding_window_rate_limiter_unit`: Verifies window cutoffs and retry-after calculation.
+     - `test_route_rate_limiting_enforcement`: Verifies 429 response when limit exceeded on questions route.
+     - `test_admin_unpublish_and_rights_revocation`: Verifies version deactivation, audit record, and subsequent `unsupported_title` safe response (`AC-016`).
+     - `test_disaster_recovery_backup_and_restore`: Verifies backup creation, checksum validation, database restoration, and tamper-detection failure.
+- **Verification Commands Executed:**
+  - `.venv/bin/pytest tests/test_operational_readiness.py -v`: 5 passed in 0.42s
+  - `.venv/bin/pytest -v`: **50 passed in 0.98s** across 10 test suites
+- **Commit:** Pending local commit for Epics E10 & E11.
+- **Next Task:** Final verification sign-off and Knowledge Graph update.
+- **Remote Push:** NOT PERFORMED.
+
 
 
 

@@ -87,6 +87,16 @@ class RequestCorrelationMiddleware(BaseHTTPMiddleware):
             response: Response = await call_next(request)
             duration_ms = (time.perf_counter() - start_time) * 1000.0
             response.headers["X-Request-ID"] = req_id
+
+            # Record operational telemetry (OPS-001, OPS-004)
+            try:
+                from services.api.telemetry import telemetry
+                telemetry.record_request()
+                telemetry.record_latency("http_request", duration_ms)
+                telemetry.record_outcome(f"http_{response.status_code}")
+            except Exception:
+                pass
+
             logger.info(
                 "HTTP %s %s completed status=%d duration=%.2fms",
                 request.method,
@@ -97,6 +107,13 @@ class RequestCorrelationMiddleware(BaseHTTPMiddleware):
             return response
         except Exception as exc:
             duration_ms = (time.perf_counter() - start_time) * 1000.0
+            try:
+                from services.api.telemetry import telemetry
+                telemetry.record_request()
+                telemetry.record_latency("http_request", duration_ms)
+                telemetry.record_outcome("http_500")
+            except Exception:
+                pass
             logger.exception("HTTP %s %s unhandled exception after %.2fms: %s", request.method, request.url.path, duration_ms, str(exc))
             raise exc
         finally:

@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.api.ai.orchestrator import RagOrchestrator
 from services.api.api.dependencies import get_current_user_id, get_db
 from services.api.api.schemas import QuestionRequest, QuestionResponse
+from services.api.rate_limiting import RateLimiter
 
 router = APIRouter(prefix="/sessions", tags=["questions"])
 
@@ -22,6 +23,7 @@ async def ask_question(
     body: QuestionRequest,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
+    _rate_limit: None = Depends(RateLimiter()),
 ) -> QuestionResponse:
     """Submit a question within a viewing session.
 

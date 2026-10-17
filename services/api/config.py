@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     max_context_tokens: int = Field(default=4000, ge=500, le=32000)
     max_question_length: int = Field(default=500, ge=10, le=2000)
     confirmation_nonce_expire_seconds: int = Field(default=300, ge=30, le=3600)
+    rate_limit_per_minute: int = Field(default=60, ge=1, le=1000)
 
     # Verification helper for diagnostics
     def is_production(self) -> bool:

@@ -127,39 +127,59 @@
 ### Epic E7: Frontend Foundation and API Integration
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `FE-FOUND-001` | Inspect and establish frontend architecture | P1 | G1 | `VERIFIED` | `apps/tv-client/` with static mount at `/tv` | Pending |
-| `FE-FOUND-002` | Centralized typed API client matching contract | P1 | E7-001 | `VERIFIED` | `apps/tv-client/js/api.js` (Titles, Sessions, Questions) | Pending |
-| `FE-FOUND-003` | Dynamic origin base URL configuration | P1 | E7-002 | `VERIFIED` | Automatically resolves `/api/v1` without secrets | Pending |
-| `FE-FOUND-004` | Common loading, error, empty, and retry states | P1 | E7-003 | `VERIFIED` | Spinners, empty catalog card, toast notifications | Pending |
-| `FE-FOUND-005` | Frontend test suite and asset validation | P1 | E7-004 | `VERIFIED` | `tests/test_tv_client.py` (3/3 passing) | Pending |
+| `FE-FOUND-001` | Inspect and establish frontend architecture | P1 | G1 | `VERIFIED` | `apps/tv-client/` with static mount at `/tv` | `020fbd3` |
+| `FE-FOUND-002` | Centralized typed API client matching contract | P1 | E7-001 | `VERIFIED` | `apps/tv-client/js/api.js` (Titles, Sessions, Questions) | `020fbd3` |
+| `FE-FOUND-003` | Dynamic origin base URL configuration | P1 | E7-002 | `VERIFIED` | Automatically resolves `/api/v1` without secrets | `020fbd3` |
+| `FE-FOUND-004` | Common loading, error, empty, and retry states | P1 | E7-003 | `VERIFIED` | Spinners, empty catalog card, toast notifications | `020fbd3` |
+| `FE-FOUND-005` | Frontend test suite and asset validation | P1 | E7-004 | `VERIFIED` | `tests/test_tv_client.py` (3/3 passing) | `020fbd3` |
 
 ### Epic E8: Core Fire TV User Journeys (10-ft Remote D-Pad)
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `FE-UI-001` | Screen 1 (S1): Welcome and privacy notice | P1 | E7 | `VERIFIED` | `s1-welcome` with 10-ft typography & privacy terms | Pending |
-| `FE-UI-002` | Screen 2 (S2): Published title catalog browsing | P1 | E7 | `VERIFIED` | `s2-catalog` with readiness badges & card grid | Pending |
-| `FE-UI-003` | Screen 3 (S3): Playback slider & interval jumps | P1 | E7 | `VERIFIED` | `s3-details` with digital clock & +5m/+15m jumps | Pending |
-| `FE-UI-004` | Screen 4 (S4): Companion console & presets | P1 | E7 | `VERIFIED` | `s4-companion` with presets & custom TV input | Pending |
-| `FE-UI-005` | Screen 5 (S5): Grounded answer & scene citations | P1 | E7 | `VERIFIED` | `s5-answer` with timestamp badges & verbatim quotes | Pending |
-| `FE-UI-006` | Screen 6 (S6): Clarification & safe abstention | P1 | E7 | `VERIFIED` | `s6-clarification` with advance time / rephrase options | Pending |
-| `FE-UI-007` | Screen 7 (S7): Spoiler confirmation modal | P0 | E7 | `VERIFIED` | `s7-spoiler-modal` with nonce & default Cancel focus | Pending |
-| `FE-UI-008` | Screen 8 (S8): Settings & viewer privacy controls | P1 | E7 | `VERIFIED` | `s8-settings` with reset session & audit terms | Pending |
-| `FE-UI-009` | Screen 9 (S9): Operations & diagnostics panel | P1 | E7 | `VERIFIED` | `s9-admin` with subtitle ingestion & version table | Pending |
-| `FE-UI-010` | Spatial D-pad remote engine & simulator overlay | P0 | E7, E8 | `VERIFIED` | `apps/tv-client/js/remote.js` (Arrow navigation & modal trap) | Pending |
+| `FE-UI-001` | Screen 1 (S1): Welcome and privacy notice | P1 | E7 | `VERIFIED` | `s1-welcome` with 10-ft typography & privacy terms | `020fbd3` |
+| `FE-UI-002` | Screen 2 (S2): Published title catalog browsing | P1 | E7 | `VERIFIED` | `s2-catalog` with readiness badges & card grid | `020fbd3` |
+| `FE-UI-003` | Screen 3 (S3): Playback slider & interval jumps | P1 | E7 | `VERIFIED` | `s3-details` with digital clock & +5m/+15m jumps | `020fbd3` |
+| `FE-UI-004` | Screen 4 (S4): Companion console & presets | P1 | E7 | `VERIFIED` | `s4-companion` with presets & custom TV input | `020fbd3` |
+| `FE-UI-005` | Screen 5 (S5): Grounded answer & scene citations | P1 | E7 | `VERIFIED` | `s5-answer` with timestamp badges & verbatim quotes | `020fbd3` |
+| `FE-UI-006` | Screen 6 (S6): Clarification & safe abstention | P1 | E7 | `VERIFIED` | `s6-clarification` with advance time / rephrase options | `020fbd3` |
+| `FE-UI-007` | Screen 7 (S7): Spoiler confirmation modal | P0 | E7 | `VERIFIED` | `s7-spoiler-modal` with nonce & default Cancel focus | `020fbd3` |
+| `FE-UI-008` | Screen 8 (S8): Settings & viewer privacy controls | P1 | E7 | `VERIFIED` | `s8-settings` with reset session & audit terms | `020fbd3` |
+| `FE-UI-009` | Screen 9 (S9): Operations & diagnostics panel | P1 | E7 | `VERIFIED` | `s9-admin` with subtitle ingestion & version table | `020fbd3` |
+| `FE-UI-010` | Spatial D-pad remote engine & simulator overlay | P0 | E7, E8 | `VERIFIED` | `apps/tv-client/js/remote.js` (Arrow navigation & modal trap) | `020fbd3` |
 
 ### Epic E9: End-to-End Integration and Regression
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `E2E-001` | Complete supported user journeys (AC-001 to AC-020) | P1 | E8 | `VERIFIED` | `tests/test_e2e_user_journeys.py` (12-step end-to-end journey) | Pending |
-| `E2E-002` | Ingestion-to-retrieval-to-answer behavior | P1 | E9-001 | `VERIFIED` | Subtitle ingestion -> active version -> grounded answer | Pending |
-| `E2E-003` | Spoiler boundaries through actual frontend/API paths | P1 | E9-002 | `VERIFIED` | Gated in safe mode, elevated via nonce, verified in test | Pending |
-| `E2E-004` | Cross-user session isolation & unauthorized defense | P1 | E9-003 | `VERIFIED` | 403 Forbidden for cross-user attempts | Pending |
-| `E2E-005` | Full regression suite passes across all test modules | P1 | E9-004 | `VERIFIED` | **45 passed in 0.93s** across 9 test suites | Pending |
+| `E2E-001` | Complete supported user journeys (AC-001 to AC-020) | P1 | E8 | `VERIFIED` | `tests/test_e2e_user_journeys.py` (12-step end-to-end journey) | `020fbd3` |
+| `E2E-002` | Ingestion-to-retrieval-to-answer behavior | P1 | E9-001 | `VERIFIED` | Subtitle ingestion -> active version -> grounded answer | `020fbd3` |
+| `E2E-003` | Spoiler boundaries through actual frontend/API paths | P1 | E9-002 | `VERIFIED` | Gated in safe mode, elevated via nonce, verified in test | `020fbd3` |
+| `E2E-004` | Cross-user session isolation & unauthorized defense | P1 | E9-003 | `VERIFIED` | 403 Forbidden for cross-user attempts | `020fbd3` |
+| `E2E-005` | Full regression suite passes across all test modules | P1 | E9-004 | `VERIFIED` | **50 passed in 0.98s** across 10 test suites | Pending |
+
+### Epic E10: Operational Readiness & Controlled Beta
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `OPS-001` | Documented metrics and privacy-safe operational payloads | P2 | E9 | `VERIFIED` | `services/api/telemetry.py` (Registry, latencies, tokens) | Pending |
+| `OPS-002` | Health probes and operational dashboards | P2 | E10-001 | `VERIFIED` | `/health/live`, `/health/ready`, `/health/metrics` | Pending |
+| `OPS-003` | Sliding-window rate limiter & concurrency protection | P1 | E9 | `VERIFIED` | `services/api/rate_limiting.py` (HTTP 429 response) | Pending |
+| `OPS-004` | Percentiles (p50, p95, p99) and token/cost accounting | P2 | E10-001 | `VERIFIED` | Instrumented in `orchestrator.py` & `logging.py` | Pending |
+| `OPS-005` | Automated database backup, restore, and integrity verification | P1 | E2 | `VERIFIED` | `ops/scripts/backup_restore.py` with SHA-256 validation | Pending |
+| `OPS-006` | Title unpublishing, version deactivation, rights revocation | P1 | E4 | `VERIFIED` | `POST /admin/titles/{id}/unpublish` (`AC-016`) | Pending |
+| `OPS-007` | Production runbooks and incident response playbooks | P2 | E10 | `VERIFIED` | `ops/runbooks/OPERATIONAL_RUNBOOK.md` & `INCIDENT_RESPONSE.md` | Pending |
+
+### Epic E11: Production Launch Verification
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `REL-001` | Invariant & compliance checklist sign-off | P1 | E10 | `VERIFIED` | Pre-retrieval filtering, nonce TTL, audit trail | Pending |
+| `REL-002` | Automated test regression gate (100% pass) | P0 | E10 | `VERIFIED` | **50 automated tests passing** across 10 test suites | Pending |
+| `REL-003` | Disaster recovery restore test verification | P1 | OPS-005 | `VERIFIED` | Automated backup/restore test in `test_operational_readiness.py` | Pending |
+| `REL-004` | Release readiness documentation update | P1 | E11 | `VERIFIED` | `docs/development/16_RELEASE_READINESS_REPORT.md` | Pending |
 
 ---
 
 ## 3. Remote Publication Status
 **Remote Push Policy:** Strictly **PROHIBITED** without explicit user authorization.  
 **Current State:** All commits exist locally on branch `main`. **No remote push performed.**
+
 
 

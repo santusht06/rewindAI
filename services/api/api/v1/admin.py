@@ -129,3 +129,39 @@ async def publish_version(
         "version_number": published_ver.version_number,
         "status": "published",
     }
+
+
+@router.post("/titles/{title_id}/unpublish")
+async def unpublish_title(
+    title_id: str,
+    admin_actor: str = Depends(verify_admin_authorization),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Atomically deactivate active content versions and revoke published status (OPS-006, AC-016)."""
+    movie_repo = MovieRepository(db)
+    content_repo = ContentVersionRepository(db)
+    audit_repo = AuditEventRepository(db)
+
+    movie = await movie_repo.get_by_id(title_id)
+    if not movie:
+        raise NotFoundError(f"Movie '{title_id}' not found.")
+
+    # Deactivate all active versions to prevent indexing/retrieval
+    await content_repo.deactivate_all_versions(title_id)
+    movie.status = MovieStatus.DRAFT.value
+    await db.flush()
+
+    await audit_repo.record_event(
+        action=AuditAction.UNPUBLISH,
+        target_type="movie",
+        target_id=title_id,
+        actor=admin_actor,
+        details={"movie_id": title_id, "action": "rights_revocation_unpublish"},
+    )
+
+    return {
+        "movie_id": title_id,
+        "status": "draft",
+        "message": f"Title '{title_id}' unpublished successfully.",
+    }
+

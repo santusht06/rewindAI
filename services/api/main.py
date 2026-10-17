@@ -96,11 +96,22 @@ def create_app() -> FastAPI:
             "components": components,
         }
 
-    # 5. Mount API v1 Routers
+    # 5. Metrics & Operational Telemetry Probe (OPS-001, OPS-004)
+    from services.api.telemetry import telemetry
+
+    @app.get("/health/metrics", tags=["Health"], summary="Operational Metrics and Latency Percentiles")
+    async def health_metrics() -> dict[str, Any]:
+        return telemetry.get_summary()
+
+    @app.get("/metrics", tags=["Health"], summary="Operational Metrics (Alias)", include_in_schema=False)
+    async def metrics_alias() -> dict[str, Any]:
+        return telemetry.get_summary()
+
+    # 6. Mount API v1 Routers
     from services.api.api.v1 import api_v1_router
     app.include_router(api_v1_router)
 
-    # 6. Mount 10-ft Fire TV Web Client (S1 - S9)
+    # 7. Mount 10-ft Fire TV Web Client (S1 - S9)
     from pathlib import Path
     from starlette.staticfiles import StaticFiles
     from fastapi.responses import RedirectResponse
