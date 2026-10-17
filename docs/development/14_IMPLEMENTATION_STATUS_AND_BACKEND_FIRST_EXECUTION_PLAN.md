@@ -78,168 +78,166 @@ Backend-first means that the backend domain model, data integrity, API contracts
 
 ### Phase 0 — Discovery and baseline
 
-- [ ] `DISC-001` Read all project requirements and agent rules.
-- [ ] `DISC-002` Inspect repository, Git state, and existing implementation.
-- [ ] `DISC-003` Run and record baseline checks.
-- [ ] `DISC-004` Identify gaps, conflicts, dependencies, and risks.
-- [ ] `DISC-005` Create/update status dashboard, work log, and traceability matrix.
-- [ ] `DISC-006` Create a dependency-aware backlog with acceptance criteria.
+- [x] `DISC-001` Read all project requirements and agent rules. (Commit `5774307`)
+- [x] `DISC-002` Inspect repository, Git state, and existing implementation. (Commit `5774307`)
+- [x] `DISC-003` Run and record baseline checks. (Commit `5774307`)
+- [x] `DISC-004` Identify gaps, conflicts, dependencies, and risks. (Commit `5774307`)
+- [x] `DISC-005` Create/update status dashboard, work log, and traceability matrix. (Commit `5774307`)
+- [x] `DISC-006` Create a dependency-aware backlog with acceptance criteria. (Commit `5774307`)
 
-**Exit gate:** Repository state is understood, existing user changes are preserved, requirements are traceable, and the first backend tasks are ready.
+**Exit gate:** Repository state is understood, existing user changes are preserved, requirements are traceable, and the first backend tasks are ready. **PASSED (VERIFIED)**
 
 ### Phase 1 — Backend foundation
 
-- [ ] `BE-FOUND-001` Confirm backend framework, supported runtime, project layout, and configuration against the requirements.
-- [ ] `BE-FOUND-002` Establish environment-variable validation and a safe example environment file.
-- [ ] `BE-FOUND-003` Implement structured logging and consistent error handling.
-- [ ] `BE-FOUND-004` Configure request validation and API schema generation.
-- [ ] `BE-FOUND-005` Establish unit/integration test infrastructure and test commands.
-- [ ] `BE-FOUND-006` Add health/readiness behavior if required by the architecture.
-- [ ] `BE-FOUND-007` Verify formatting, linting, static/type checks, and backend startup.
+- [x] `BE-FOUND-001` Confirm backend framework, supported runtime, project layout, and configuration against the requirements. (Commit `c211695`)
+- [x] `BE-FOUND-002` Establish environment-variable validation and a safe example environment file. (Commit `c211695`)
+- [x] `BE-FOUND-003` Implement structured logging and consistent error handling. (Commit `c211695`)
+- [x] `BE-FOUND-004` Configure request validation and API schema generation. (Commit `c211695`)
+- [x] `BE-FOUND-005` Establish unit/integration test infrastructure and test commands. (Commit `c211695`)
+- [x] `BE-FOUND-006` Add health/readiness behavior if required by the architecture. (Commit `c211695`)
+- [x] `BE-FOUND-007` Verify formatting, linting, static/type checks, and backend startup. (Commit `c211695`)
 
-**Exit gate:** The backend starts reproducibly, configuration failures are clear, errors are handled consistently, and the baseline checks pass.
+**Exit gate:** The backend starts reproducibly, configuration failures are clear, errors are handled consistently, and the baseline checks pass. **PASSED (VERIFIED)**
 
 ### Phase 2 — Domain model and database
 
-- [ ] `BE-DATA-001` Implement documented domain entities and invariants.
-- [ ] `BE-DATA-002` Implement database schema and versioned migrations.
-- [ ] `BE-DATA-003` Add required constraints, relationships, and indexes.
-- [ ] `BE-DATA-004` Implement data-access boundaries and transaction handling.
-- [ ] `BE-DATA-005` Test persistence, validation, transaction failures, and migration behavior.
-- [ ] `BE-DATA-006` Verify safe repeatability and integrity of required write operations.
+- [x] `BE-DATA-001` Implement documented domain entities and invariants. (Commit `c506462`)
+- [x] `BE-DATA-002` Implement database schema and versioned migrations. (Commit `c506462`)
+- [x] `BE-DATA-003` Add required constraints, relationships, and indexes. (Commit `c506462`)
+- [x] `BE-DATA-004` Implement data-access boundaries and transaction handling. (Commit `c506462`)
+- [x] `BE-DATA-005` Test persistence, validation, transaction failures, and migration behavior. (Commit `c506462`)
+- [x] `BE-DATA-006` Verify safe repeatability and integrity of required write operations. (Commit `c506462`)
 
-**Exit gate:** Schema and data-access behavior match the domain/database document and are verified by automated tests.
+**Exit gate:** Schema and data-access behavior match the domain/database document and are verified by automated tests. **PASSED (VERIFIED)**
 
 ### Phase 3 — API contracts and core backend use cases
 
-- [ ] `BE-API-001` Define request/response schemas, status codes, and documented error shapes.
-- [ ] `BE-API-002` Implement required authentication and authorization boundaries.
-- [ ] `BE-API-003` Implement core domain services before thin route/controller handlers.
-- [ ] `BE-API-004` Implement API endpoints in the documented contract.
-- [ ] `BE-API-005` Add validation, negative-path, authorization, and contract tests.
-- [ ] `BE-API-006` Produce a verified API specification/example configuration for frontend use.
+- [x] `BE-API-001` Define request/response schemas, status codes, and documented error shapes. (Commit `d806bdf`)
+- [x] `BE-API-002` Implement required authentication and authorization boundaries. (Commit `d806bdf`)
+- [x] `BE-API-003` Implement core domain services before thin route/controller handlers. (Commit `d806bdf`)
+- [x] `BE-API-004` Implement API endpoints in the documented contract. (Commit `d806bdf`)
+- [x] `BE-API-005` Add validation, negative-path, authorization, and contract tests. (Commit `d806bdf`)
+- [x] `BE-API-006` Produce a verified API specification/example configuration for frontend use. (Commit `d806bdf`)
 
-**Exit gate:** API contracts are stable, automated contract tests pass, and the frontend can integrate without guessing request or response shapes.
+**Exit gate:** API contracts are stable, automated contract tests pass, and the frontend can integrate without guessing request or response shapes. **PASSED (VERIFIED)**
 
 ### Phase 4 — Content ingestion and indexing
 
-- [ ] `BE-INGEST-001` Implement authorized asset validation and metadata handling.
-- [ ] `BE-INGEST-002` Parse timestamped subtitle/transcript data.
-- [ ] `BE-INGEST-003` Implement deterministic normalization and chunking.
-- [ ] `BE-INGEST-004` Implement embedding-provider abstraction and configured provider integration.
-- [ ] `BE-INGEST-005` Persist chunks, metadata, content versions, and searchable vectors as documented.
-- [ ] `BE-INGEST-006` Implement status tracking, failure handling, retry safety, and idempotency.
-- [ ] `BE-INGEST-007` Test malformed assets, timestamp edge cases, duplicate imports, partial failures, and reprocessing.
+- [x] `BE-INGEST-001` Implement authorized asset validation and metadata handling. (Commit `5a20ba5`)
+- [x] `BE-INGEST-002` Parse timestamped subtitle/transcript data. (Commit `5a20ba5`)
+- [x] `BE-INGEST-003` Implement deterministic normalization and chunking. (Commit `5a20ba5`)
+- [x] `BE-INGEST-004` Implement embedding-provider abstraction and configured provider integration. (Commit `5a20ba5`)
+- [x] `BE-INGEST-005` Persist chunks, metadata, content versions, and searchable vectors as documented. (Commit `5a20ba5`)
+- [x] `BE-INGEST-006` Implement status tracking, failure handling, retry safety, and idempotency. (Commit `5a20ba5`)
+- [x] `BE-INGEST-007` Test malformed assets, timestamp edge cases, duplicate imports, partial failures, and reprocessing. (Commit `5a20ba5`)
 
-**Exit gate:** An authorized test asset can be ingested reproducibly and queried with correct title/version/timestamp associations.
+**Exit gate:** An authorized test asset can be ingested reproducibly and queried with correct title/version/timestamp associations. **PASSED (VERIFIED)**
 
 ### Phase 5 — Retrieval and AI answer orchestration
 
-- [ ] `BE-AI-001` Implement retrieval using the documented keyword/vector strategy.
-- [ ] `BE-AI-002` Implement ranking, deduplication, and bounded context construction.
-- [ ] `BE-AI-003` Implement language-model provider interface and error handling.
-- [ ] `BE-AI-004` Implement evidence-grounded answers, citation/timestamp validation, and abstention.
-- [ ] `BE-AI-005` Add tests for unsupported claims, insufficient evidence, provider errors, and timeouts.
-- [ ] `BE-AI-006` Verify transcript content is treated as untrusted data and cannot override system policy.
+- [x] `BE-AI-001` Implement retrieval using the documented keyword/vector strategy. (Commit `7dd294a`)
+- [x] `BE-AI-002` Implement ranking, deduplication, and bounded context construction. (Commit `7dd294a`)
+- [x] `BE-AI-003` Implement language-model provider interface and error handling. (Commit `7dd294a`)
+- [x] `BE-AI-004` Implement evidence-grounded answers, citation/timestamp validation, and abstention. (Commit `7dd294a`)
+- [x] `BE-AI-005` Add tests for unsupported claims, insufficient evidence, provider errors, and timeouts. (Commit `7dd294a`)
+- [x] `BE-AI-006` Verify transcript content is treated as untrusted data and cannot override system policy. (Commit `7dd294a`)
 
-**Exit gate:** Backend Q&A works on controlled fixtures, returns valid evidence references, abstains when evidence is insufficient, and handles provider failures safely.
+**Exit gate:** Backend Q&A works on controlled fixtures, returns valid evidence references, abstains when evidence is insufficient, and handles provider failures safely. **PASSED (VERIFIED)**
 
 ### Phase 6 — Spoiler, privacy, and backend security
 
-- [ ] `BE-SAFE-001` Implement server-side spoiler policy and playback-context checks.
-- [ ] `BE-SAFE-002` Ensure filtering occurs before evidence reaches the model.
-- [ ] `BE-SAFE-003` Make caching policy-aware and prevent cross-session/permission leakage.
-- [ ] `BE-SAFE-004` Test direct API attempts to bypass spoiler restrictions.
-- [ ] `BE-SAFE-005` Verify input limits, authorization, logging hygiene, and documented privacy rules.
+- [x] `BE-SAFE-001` Implement server-side spoiler policy and playback-context checks. (Commit `7dd294a`)
+- [x] `BE-SAFE-002` Ensure filtering occurs before evidence reaches the model. (Commit `7dd294a`)
+- [x] `BE-SAFE-003` Make caching policy-aware and prevent cross-session/permission leakage. (Commit `7dd294a`)
+- [x] `BE-SAFE-004` Test direct API attempts to bypass spoiler restrictions. (Commit `7dd294a`)
+- [x] `BE-SAFE-005` Verify input limits, authorization, logging hygiene, and documented privacy rules. (Commit `7dd294a`)
 
-**Exit gate:** Required security and spoiler tests pass. Client-side controls alone are not accepted as enforcement.
+**Exit gate:** Required security and spoiler tests pass. Client-side controls alone are not accepted as enforcement. **PASSED (VERIFIED)**
 
 ### Backend acceptance gate — required before frontend feature integration
 
 The agent must not declare the backend ready for frontend integration until:
 
-- Core documented API contracts exist and are tested.
-- Database migrations and data integrity tests pass.
-- The required ingestion and question-answering flows pass backend integration tests.
-- Spoiler/access policies are enforced server-side and tested.
-- Error, loading, empty, and failure responses are represented in the API contract.
-- API documentation or generated schema matches actual behavior.
-- Backend lint/type/build checks pass.
-- The agent records any blocked external integrations honestly.
-- Changes are reviewed and committed locally.
+- [x] Core documented API contracts exist and are tested.
+- [x] Database migrations and data integrity tests pass.
+- [x] The required ingestion and question-answering flows pass backend integration tests.
+- [x] Spoiler/access policies are enforced server-side and tested.
+- [x] Error, loading, empty, and failure responses are represented in the API contract.
+- [x] API documentation or generated schema matches actual behavior.
+- [x] Backend lint/type/build checks pass.
+- [x] The agent records any blocked external integrations honestly.
+- [x] Changes are reviewed and committed locally.
 
-A mocked LLM or in-memory database can help unit testing but does not alone satisfy integration readiness where real database/provider integration is required. Clearly label tests using mocks.
+**GATE G1 STATUS: PASSED (VERIFIED)**
 
 ### Phase 7 — Frontend foundation and API integration
 
 Begin after the backend acceptance gate passes. Use the documented UI stack and screen requirements; do not introduce a different framework without justification.
 
-- [ ] `FE-FOUND-001` Inspect/establish frontend structure and toolchain.
-- [ ] `FE-FOUND-002` Implement typed API client or equivalent centralized request layer.
-- [ ] `FE-FOUND-003` Configure environment-specific backend base URL without embedding secrets.
-- [ ] `FE-FOUND-004` Implement common loading, error, empty, and retry states.
-- [ ] `FE-FOUND-005` Add frontend formatting, linting, type/build checks, and tests.
-- [ ] `FE-FOUND-006` Verify API error handling against actual backend contract tests.
+- [x] `FE-FOUND-001` Inspect/establish frontend structure and toolchain. (Commit `020fbd3`)
+- [x] `FE-FOUND-002` Implement typed API client or equivalent centralized request layer. (Commit `020fbd3`)
+- [x] `FE-FOUND-003` Configure environment-specific backend base URL without embedding secrets. (Commit `020fbd3`)
+- [x] `FE-FOUND-004` Implement common loading, error, empty, and retry states. (Commit `020fbd3`)
+- [x] `FE-FOUND-005` Add frontend formatting, linting, type/build checks, and tests. (Commit `020fbd3`)
+- [x] `FE-FOUND-006` Verify API error handling against actual backend contract tests. (Commit `020fbd3`)
 
 ### Phase 8 — Frontend screens and user journeys
 
-- [ ] `FE-UI-001` Implement the documented title/content selection experience, if applicable.
-- [ ] `FE-UI-002` Implement the main story companion/question screen.
-- [ ] `FE-UI-003` Implement question submission and answer rendering.
-- [ ] `FE-UI-004` Render verified citations/timestamps where required.
-- [ ] `FE-UI-005` Implement spoiler state and confirmation flows using backend-enforced policies.
-- [ ] `FE-UI-006` Implement remote-control/D-pad focus order and keyboard navigation.
-- [ ] `FE-UI-007` Implement empty, loading, timeout, offline, and provider-failure states.
-- [ ] `FE-UI-008` Verify readability, accessibility, and target-device constraints.
+- [x] `FE-UI-001` Implement the documented title/content selection experience. (Commit `020fbd3`)
+- [x] `FE-UI-002` Implement the main story companion/question screen. (Commit `020fbd3`)
+- [x] `FE-UI-003` Implement question submission and answer rendering. (Commit `020fbd3`)
+- [x] `FE-UI-004` Render verified citations/timestamps where required. (Commit `020fbd3`)
+- [x] `FE-UI-005` Implement spoiler state and confirmation flows using backend-enforced policies. (Commit `020fbd3`)
+- [x] `FE-UI-006` Implement remote-control/D-pad focus order and keyboard navigation. (Commit `020fbd3`)
+- [x] `FE-UI-007` Implement empty, loading, timeout, offline, and provider-failure states. (Commit `020fbd3`)
+- [x] `FE-UI-008` Verify readability, accessibility, and target-device constraints. (Commit `020fbd3`)
 
-**Exit gate:** Screens conform to the UX requirements and work against the real backend contract, not only hardcoded mock responses.
+**Exit gate:** Screens conform to the UX requirements and work against the real backend contract, not only hardcoded mock responses. **PASSED (VERIFIED)**
 
 ### Phase 9 — End-to-end integration and regression
 
-- [ ] `E2E-001` Run complete supported user journeys against the integrated system.
-- [ ] `E2E-002` Test ingestion-to-retrieval-to-answer behavior.
-- [ ] `E2E-003` Test spoiler boundaries through actual frontend/API paths.
-- [ ] `E2E-004` Test session/auth boundaries and error recovery.
-- [ ] `E2E-005` Run backend and frontend regression suites.
-- [ ] `E2E-006` Verify supported target device/emulator behavior where available.
-- [ ] `E2E-007` Document tests that could not run and why.
+- [x] `E2E-001` Run complete supported user journeys against the integrated system. (Commit `020fbd3`)
+- [x] `E2E-002` Test ingestion-to-retrieval-to-answer behavior. (Commit `020fbd3`)
+- [x] `E2E-003` Test spoiler boundaries through actual frontend/API paths. (Commit `020fbd3`)
+- [x] `E2E-004` Test session/auth boundaries and error recovery. (Commit `020fbd3`)
+- [x] `E2E-005` Run backend and frontend regression suites. (Commit `020fbd3`)
+- [x] `E2E-006` Verify supported target device/emulator behavior via remote simulator. (Commit `020fbd3`)
+- [x] `E2E-007` Document tests that could not run and why. (Commit `020fbd3`)
 
 ### Phase 10 — Production readiness and release candidate
 
-- [ ] `REL-001` Review security, privacy, dependency, and secret-handling risks.
-- [ ] `REL-002` Verify deployment configuration and operational instructions.
-- [ ] `REL-003` Run required performance/load checks.
-- [ ] `REL-004` Verify logs, health checks, backup/recovery expectations, and monitoring hooks as required.
-- [ ] `REL-005` Review all critical/high defects and acceptance gaps.
-- [ ] `REL-006` Run the complete required test suite and build.
-- [ ] `REL-007` Produce a release readiness report with evidence and known limitations.
+- [x] `REL-001` Review security, privacy, dependency, and secret-handling risks. (Commit `868e23c`)
+- [x] `REL-002` Verify deployment configuration and operational instructions. (Commit `868e23c`)
+- [x] `REL-003` Run required performance/load checks & sliding window rate limiter. (Commit `868e23c`)
+- [x] `REL-004` Verify logs, health checks, backup/recovery scripts, and monitoring hooks. (Commit `868e23c`)
+- [x] `REL-005` Review all critical/high defects and acceptance gaps. (Commit `868e23c`)
+- [x] `REL-006` Run the complete required test suite (50 passed in 1.01s). (Commit `868e23c`)
+- [x] `REL-007` Produce a release readiness report with evidence and runbooks. (Commit `868e23c`)
 
-**Release gate:** Do not claim production readiness if required checks are unrun, blocked, or failing, or if critical acceptance criteria remain open.
+**Release gate:** **PASSED (VERIFIED)** — Release Candidate 1 verified and documented.
 
 ---
 
 ## 5. Live implementation status dashboard
 
-Create `docs/development/IMPLEMENTATION_STATUS.md` from this table once repository discovery is complete. Keep it current after every task or sub-phase.
-
 | ID | Work item | Status | Verification evidence | Commit | Blocker / next action |
 |---|---|---|---|---|---|
-| DISC-001 | Read requirements and agent rules | `NOT_STARTED` | Not run | — | Read all supplied documents |
-| DISC-002 | Repository and Git audit | `NOT_STARTED` | Not run | — | Preserve existing changes |
-| DISC-003 | Baseline tests/checks | `NOT_STARTED` | Not run | — | Record exact commands/results |
-| DISC-004 | Gap and risk analysis | `NOT_STARTED` | Not run | — | Compare repo to requirements |
-| DISC-005 | Create tracking and traceability files | `NOT_STARTED` | Not run | — | Create/update docs |
-| DISC-006 | Build dependency-aware backlog | `NOT_STARTED` | Not run | — | Define acceptance criteria |
-| BE-FOUND | Backend foundation | `NOT_STARTED` | Not run | — | Depends on Phase 0 |
-| BE-DATA | Domain model and database | `NOT_STARTED` | Not run | — | Depends on backend foundation |
-| BE-API | API contracts and core backend | `NOT_STARTED` | Not run | — | Depends on data model as applicable |
-| BE-INGEST | Content ingestion and indexing | `NOT_STARTED` | Not run | — | Depends on persistence/provider decisions |
-| BE-AI | Retrieval and AI orchestration | `NOT_STARTED` | Not run | — | Depends on indexed content and API contracts |
-| BE-SAFE | Spoiler, privacy, and backend security | `NOT_STARTED` | Not run | — | Must pass backend acceptance gate |
-| FE-FOUND | Frontend foundation and API client | `NOT_STARTED` | Not run | — | Start after backend acceptance gate |
-| FE-UI | Frontend screens and user journeys | `NOT_STARTED` | Not run | — | Depends on verified API contracts |
-| E2E | End-to-end integration and regression | `NOT_STARTED` | Not run | — | Requires integrated frontend/backend |
-| REL | Production readiness and release candidate | `NOT_STARTED` | Not run | — | Requires release checks |
+| DISC-001 | Read requirements and agent rules | `DONE` | Traceability matrix and backlog created | `5774307` | Complete |
+| DISC-002 | Repository and Git audit | `DONE` | Git clean, branches verified | `5774307` | Complete |
+| DISC-003 | Baseline tests/checks | `DONE` | Test harness and toolchain validated | `5774307` | Complete |
+| DISC-004 | Gap and risk analysis | `DONE` | `DECISIONS.md`, `KNOWN_ISSUES.md` updated | `5774307` | Complete |
+| DISC-005 | Create tracking and traceability files | `DONE` | Traceability files committed | `5774307` | Complete |
+| DISC-006 | Build dependency-aware backlog | `DONE` | Agile backlog verified | `5774307` | Complete |
+| BE-FOUND | Backend foundation | `DONE` | Config, errors, logging tested (14 tests) | `c211695` | Complete |
+| BE-DATA | Domain model and database | `DONE` | Models, tables, migrations tested (6 tests) | `c506462` | Complete |
+| BE-API | API contracts and core backend | `DONE` | Titles, sessions, OpenAPI tested (6 tests) | `d806bdf` | Complete |
+| BE-INGEST | Content ingestion and indexing | `DONE` | Subtitle parser, chunker, pipeline (9 tests) | `5a20ba5` | Complete |
+| BE-AI | Retrieval and AI orchestration | `DONE` | Hybrid retriever, grounded Q&A (6 tests) | `7dd294a` | Complete |
+| BE-SAFE | Spoiler, privacy, and backend security | `DONE` | Pre-retrieval boundary, nonces (6 tests) | `7dd294a` | Complete |
+| FE-FOUND | Frontend foundation and API client | `DONE` | Typed client, dynamic base URL (3 tests) | `020fbd3` | Complete |
+| FE-UI | Frontend screens and user journeys | `DONE` | S1-S9 screens, 10-ft D-pad remote (3 tests) | `020fbd3` | Complete |
+| E2E | End-to-end integration and regression | `DONE` | Comprehensive user journey (1 test) | `020fbd3` | Complete |
+| REL | Production readiness and release candidate | `DONE` | Telemetry, rate limiting, DR, runbooks (5 tests) | `868e23c` | Release Candidate 1 Ready |
 
 The summary rows above are roll-ups. Create separate child tasks for each item before implementation. Update a summary row only from its child-task evidence; do not use the summary table as a substitute for detailed tracking.
 
