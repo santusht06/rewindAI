@@ -96,7 +96,12 @@ def create_app() -> FastAPI:
             "components": components,
         }
 
+    # 5. Mount API v1 Routers
+    from services.api.api.v1 import api_v1_router
+    app.include_router(api_v1_router)
+
     return app
+
 
 
 app = create_app()

@@ -20,15 +20,21 @@ class ContentProcessingStatus(str, Enum):
     QUEUED = "queued"
     PROCESSING = "processing"
     STAGED = "staged"
+    COMPLETED = "completed"
     PUBLISHED = "published"
     FAILED = "failed"
     CANCELLED = "cancelled"
 
 
+
 class ProgressSource(str, Enum):
     VERIFIED_INTEGRATION = "verified_integration"
     MANUAL = "manual"
+    MANUAL_SLIDER = "manual_slider"
+    VOICE_CUE = "voice_cue"
+    PARTNER_SYNC = "partner_sync"
     UNKNOWN = "unknown"
+
 
 
 class SpoilerMode(str, Enum):
@@ -37,12 +43,15 @@ class SpoilerMode(str, Enum):
 
 
 class QuestionStatus(str, Enum):
+    RECEIVED = "received"
     ANSWERED = "answered"
     NEEDS_CLARIFICATION = "needs_clarification"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
     SPOILER_CONFIRMATION_REQUIRED = "spoiler_confirmation_required"
+    REJECTED_SPOILER = "rejected_spoiler"
     UNSUPPORTED_TITLE = "unsupported_title"
     FAILED = "failed"
+
 
 
 class FactValidationStatus(str, Enum):
@@ -56,7 +65,16 @@ class AuditAction(str, Enum):
     UNPUBLISH = "unpublish"
     REINDEX = "reindex"
     PURGE = "purge"
+    SESSION_START = "session_start"
+    SESSION_END = "session_end"
     SPOILER_CONFIRMED = "spoiler_confirmed"
+    SPOILER_OVERRIDE = "spoiler_override"
+    SAFE_MODE_REVERT = "safe_mode_revert"
+    QUESTION_SUBMIT = "question_submit"
+
+
+AuditEventAction = AuditAction
+
 
 
 # Pydantic Domain Schemas for Transfer and Validation

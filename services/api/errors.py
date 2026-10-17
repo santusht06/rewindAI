@@ -76,3 +76,14 @@ class ProviderUnavailableError(AppException):
 class ProviderTimeoutError(AppException):
     def __init__(self, message: str = "External AI provider timed out", details: dict[str, Any] | None = None) -> None:
         super().__init__(code="GATEWAY_TIMEOUT", message=message, status_code=504, details=details)
+
+
+class ValidationError(AppException):
+    def __init__(self, message: str = "Semantic validation error", details: dict[str, Any] | None = None) -> None:
+        super().__init__(code="VALIDATION_ERROR", message=message, status_code=422, details=details)
+
+
+class BadRequestError(AppException):
+    def __init__(self, message: str = "Bad request", details: dict[str, Any] | None = None) -> None:
+        super().__init__(code="BAD_REQUEST", message=message, status_code=400, details=details)
+

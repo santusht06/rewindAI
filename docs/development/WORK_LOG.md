@@ -101,7 +101,45 @@
 - **Verification Commands Executed:**
   - `.venv/bin/pytest -v`: **20 passed** in 0.35s
   - `.venv/bin/alembic upgrade head`: OK
-- **Commit:** Pending local commit for Epic E2.
+- **Commit:** `c506462` (`feat(persistence): implement Epic E2 domain models, SQLAlchemy tables, Alembic migrations, and repository layer`)
 - **Next Task:** Epic E3 — API Contracts and Core Endpoints (`BE-API-001` through `BE-API-008`).
 - **Remote Push:** NOT PERFORMED.
+
+---
+
+## Iteration 3: Phase 1 — API Contracts and Core Endpoints (Epic E3)
+
+### Log Entry: 2026-10-17T12:24:00Z
+- **Author:** Principal Software Architect & Senior Full-Stack Engineer
+- **Task ID:** `BE-API-001` through `BE-API-009`
+- **Requirements Addressed:** `SRS-CAT-001`, `SRS-CAT-003`, `SRS-SPO-001`, `SRS-SPO-004`, `AC-004`, `AC-007`, `AC-009`, `AC-010`, `AC-020`, `04_API_CONTRACT`
+- **Status:** VERIFIED
+- **Description:**
+  1. Implemented typed Pydantic API schemas in `services/api/api/schemas.py`:
+     - Titles: `TitleListItemSchema`, `TitleListResponse`, `TitleDetailResponse`, `TitleSummarySchema`.
+     - Sessions & Progress: `CreateSessionRequest`, `SessionResponse`, `UpdateProgressRequest`, `ProgressResponse`, `SpoilerConfirmationRequest`, `SpoilerConfirmationResponse`.
+     - Q&A: `QuestionRequest`, `QuestionResponse`, `CitationSchema`, typed `QuestionOutcomeType`.
+  2. Implemented dependency injection in `services/api/api/dependencies.py`:
+     - Transactional async database sessions.
+     - Viewer identity resolution (`get_current_user_id`) from `X-User-ID` header.
+  3. Implemented core REST endpoints:
+     - `GET /api/v1/titles`: Bounded paginated catalog lookup with query search and safe index status.
+     - `GET /api/v1/titles/{title_id}`: Returns title metadata, verifies publication state, returns 404 for draft/missing titles.
+     - `POST /api/v1/sessions`: Starts session in `safe` mode, validates title publication and bounds initial position. Normalizes untrusted progress source assertions.
+     - `GET /api/v1/sessions/{session_id}`: Enforces viewer ownership (403 for unauthorized viewer).
+     - `PATCH /api/v1/sessions/{session_id}/progress`: Validates playback offset within title duration, normalizes unverified provenance claims.
+     - `POST /api/v1/sessions/{session_id}/spoiler-confirmation`: Consumes single-use server nonce, elevates mode to `full`, logs audit trail. Second use strictly rejected (AC-010).
+     - `POST /api/v1/sessions/{session_id}/safe-mode`: Reverts session to `safe` mode immediately.
+     - `DELETE /api/v1/sessions/{session_id}`: Idempotent session closure.
+     - `POST /api/v1/sessions/{session_id}/questions`: Pre-retrieval boundary filtering, server-issued nonce flow for future spoiler requests, citations grounding.
+  4. Mounted `api_v1_router` in `services/api/main.py`.
+  5. Published authoritative OpenAPI schema to `docs/api/openapi.json` (`BE-API-008`).
+  6. Implemented integration and contract test suite in `tests/test_api_v1_endpoints.py`.
+- **Verification Commands Executed:**
+  - `.venv/bin/pytest -v`: **26 passed** in 0.56s
+  - `graphify update .`: Synchronized 764 nodes, 1247 edges
+- **Commit:** Pending local commit for Epic E3.
+- **Next Task:** Epic E4 — Authorized Content Ingestion (`BE-INGEST-001` through `BE-INGEST-008`).
+- **Remote Push:** NOT PERFORMED.
+
 

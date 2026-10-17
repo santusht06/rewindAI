@@ -14,12 +14,12 @@
 |---|---|---|---|---|
 | **E0** | Discovery and repository baseline | P0 | Foundation readiness | `DONE` (Commit `5774307`) |
 | **E1** | Backend foundation (FastAPI, config, logging, health) | P0 | Reproducible startup | `VERIFIED` (Commit `c211695`) |
-| **E2** | Domain model and persistence (SQLAlchemy, migrations) | P0 | Schema & data integrity | `VERIFIED` |
-| **E3** | API contracts and core backend services | P0/P1 | Contract stability | `IN_PROGRESS` |
+| **E2** | Domain model and persistence (SQLAlchemy, migrations) | P0 | Schema & data integrity | `VERIFIED` (Commit `c506462`) |
+| **E3** | API contracts and core backend services | P0/P1 | Contract stability | `VERIFIED` |
 | **E4** | Authorized content ingestion (SRT/VTT parsing & indexing) | P1 | Idempotent indexing | `READY` |
 | **E5** | Retrieval and grounded AI answers (RAG orchestrator) | P1 | Citation validation | `READY` |
 | **E6** | Spoiler, authorization, and privacy enforcement | P0 (Q&A) | Server-side boundary gate | `READY` |
-| **G1** | **Backend Acceptance Gate** | **P0** | **Prerequisite for UI** | `BLOCKED` (Pending E3-E6) |
+| **G1** | **Backend Acceptance Gate** | **P0** | **Prerequisite for UI** | `BLOCKED` (Pending E4-E6) |
 | **E7** | Frontend foundation and API integration | P1 | Verified API client | `NOT_STARTED` (Gate G1) |
 | **E8** | Core Fire TV user journeys (10-ft remote D-pad) | P1 | Remote D-pad navigation | `NOT_STARTED` (Gate G1) |
 | **E9** | End-to-end integration and regression | P1 | AC-001 - AC-020 | `NOT_STARTED` |
@@ -57,17 +57,31 @@
 ### Epic E2: Domain Model and Persistence
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `BE-DATA-001` | Implement domain entities & invariants | P0 | E1 | `VERIFIED` | `services/api/domain/models.py` (Enums, dataclasses/models) | Pending |
-| `BE-DATA-002` | Database schema & versioned migrations | P0 | E2-001 | `VERIFIED` | Alembic migration `0cb724f2f5e5_create_initial_rewind_tables.py` | Pending |
-| `BE-DATA-003` | Foreign keys, unique constraints, and indexes | P0 | E2-002 | `VERIFIED` | `services/api/infrastructure/tables.py` relational integrity | Pending |
-| `BE-DATA-004` | Data-access / repository boundaries & transactions | P0 | E2-003 | `VERIFIED` | `services/api/infrastructure/repositories.py` async repos | Pending |
-| `BE-DATA-005` | Test persistence, rollback, and constraints | P0 | E2-004 | `VERIFIED` | 6 async DB tests in `test_domain_and_persistence.py` | Pending |
-| `BE-DATA-006` | Verify safe repeatability and write integrity | P0 | E2-005 | `VERIFIED` | Uniqueness & duplicate suppression verified | Pending |
-| `BE-DATA-007` | Pre-retrieval temporal spoiler boundary filtering | P0 | E2-004 | `VERIFIED` | SubtitleChunkRepository temporal filtering | Pending |
-| `BE-DATA-008` | Single-use spoiler confirmation nonce validation | P0 | E2-004 | `VERIFIED` | ViewingSessionRepository nonce consumption | Pending |
+| `BE-DATA-001` | Implement domain entities & invariants | P0 | E1 | `VERIFIED` | `services/api/domain/models.py` (Enums, dataclasses/models) | `c506462` |
+| `BE-DATA-002` | Database schema & versioned migrations | P0 | E2-001 | `VERIFIED` | Alembic migration `0cb724f2f5e5_create_initial_rewind_tables.py` | `c506462` |
+| `BE-DATA-003` | Foreign keys, unique constraints, and indexes | P0 | E2-002 | `VERIFIED` | `services/api/infrastructure/tables.py` relational integrity | `c506462` |
+| `BE-DATA-004` | Data-access / repository boundaries & transactions | P0 | E2-003 | `VERIFIED` | `services/api/infrastructure/repositories.py` async repos | `c506462` |
+| `BE-DATA-005` | Test persistence, rollback, and constraints | P0 | E2-004 | `VERIFIED` | 6 async DB tests in `test_domain_and_persistence.py` | `c506462` |
+| `BE-DATA-006` | Verify safe repeatability and write integrity | P0 | E2-005 | `VERIFIED` | Uniqueness & duplicate suppression verified | `c506462` |
+| `BE-DATA-007` | Pre-retrieval temporal spoiler boundary filtering | P0 | E2-004 | `VERIFIED` | SubtitleChunkRepository temporal filtering | `c506462` |
+| `BE-DATA-008` | Single-use spoiler confirmation nonce validation | P0 | E2-004 | `VERIFIED` | ViewingSessionRepository nonce consumption | `c506462` |
+
+### Epic E3: API Contracts and Core Endpoints
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `BE-API-001` | Define request/response schemas & error formats | P0 | E1, E2 | `VERIFIED` | `services/api/api/schemas.py` | Pending |
+| `BE-API-002` | Identity & viewer session ownership boundary | P0 | E3-001 | `VERIFIED` | `services/api/api/dependencies.py` (`get_current_user_id`) | Pending |
+| `BE-API-003` | Core business services and repository routing | P0 | E3-002 | `VERIFIED` | Clean separation between repositories & routers | Pending |
+| `BE-API-004` | Catalog/title lookup endpoints (`/api/v1/titles`) | P0 | E3-003 | `VERIFIED` | `GET /titles`, `GET /titles/{id}` (SRS-CAT-001, SRS-CAT-003) | Pending |
+| `BE-API-005` | Session/progress context endpoints (`/api/v1/sessions`) | P0 | E3-004 | `VERIFIED` | `POST /sessions`, `GET /sessions/{id}`, `PATCH progress` | Pending |
+| `BE-API-006` | Single-use spoiler confirmation & safe mode endpoints | P0 | E3-005 | `VERIFIED` | `POST spoiler-confirmation`, `POST safe-mode` (AC-009, AC-010) | Pending |
+| `BE-API-007` | Question submission contract endpoint | P0 | E3-006 | `VERIFIED` | `POST questions` with boundary gating (04_API_CONTRACT) | Pending |
+| `BE-API-008` | OpenAPI schema export for TV UI integration | P0 | E3-007 | `VERIFIED` | `docs/api/openapi.json` generated & verified | Pending |
+| `BE-API-009` | Comprehensive negative-path and contract test suite | P0 | E3-008 | `VERIFIED` | 6 integration tests in `tests/test_api_v1_endpoints.py` (26 total) | Pending |
 
 ---
 
 ## 3. Remote Publication Status
 **Remote Push Policy:** Strictly **PROHIBITED** without explicit user authorization.  
 **Current State:** All commits exist locally on branch `main`. **No remote push performed.**
+

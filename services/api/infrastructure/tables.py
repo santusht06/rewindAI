@@ -34,10 +34,20 @@ class MovieTable(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String(255), nullable=False)
     release_year = Column(Integer, nullable=True)
+    duration_seconds = Column(Integer, nullable=False, default=7200)
     language = Column(String(10), nullable=False, default="en")
     status = Column(String(20), nullable=False, default="draft", index=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
+
+    @property
+    def display_title(self) -> str:
+        return self.title
+
+    @property
+    def year(self) -> int | None:
+        return self.release_year
+
 
     # Relationships
     content_versions = relationship(

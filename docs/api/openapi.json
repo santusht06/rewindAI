@@ -1,0 +1,1218 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Rewind AI Companion API",
+    "description": "Rewind \u2014 Fire TV AI Story Companion Backend API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health/live": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Process Liveness Probe",
+        "operationId": "health_live_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Live Health Live Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "System Readiness Probe",
+        "operationId": "health_ready_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Ready Health Ready Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/titles": {
+      "get": {
+        "tags": [
+          "titles"
+        ],
+        "summary": "List Titles",
+        "description": "List published titles available for viewing and Q&A.",
+        "operationId": "list_titles_api_v1_titles_get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional search term",
+              "title": "Query"
+            },
+            "description": "Optional search term"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "Page limit (max 50)",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Page limit (max 50)"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Cursor for pagination",
+              "title": "Cursor"
+            },
+            "description": "Cursor for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/titles/{title_id}": {
+      "get": {
+        "tags": [
+          "titles"
+        ],
+        "summary": "Get Title",
+        "description": "Retrieve title details and Q&A availability.\n\nDoes not expose sensitive internal storage paths or operator data.",
+        "operationId": "get_title_api_v1_titles__title_id__get",
+        "parameters": [
+          {
+            "name": "title_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Title Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions": {
+      "post": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Create Session",
+        "description": "Create an active viewing session for a published movie.",
+        "operationId": "create_session_api_v1_sessions_post",
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Get Session",
+        "description": "Retrieve current state of a viewing session.",
+        "operationId": "get_session_api_v1_sessions__session_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Delete Session",
+        "description": "Close and delete a viewing session idempotently.",
+        "operationId": "delete_session_api_v1_sessions__session_id__delete",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/progress": {
+      "patch": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Update Progress",
+        "description": "Update viewing session playback position.\n\nEnforces:\n- Bounded position within movie duration.\n- Server-side source verification (untrusted clients cannot assert verified_integration).\n- Session ownership check.",
+        "operationId": "update_progress_api_v1_sessions__session_id__progress_patch",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProgressRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/spoiler-confirmation": {
+      "post": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Confirm Spoiler Mode",
+        "description": "Consume single-use server nonce to authorize full spoiler mode.\n\nAdheres strictly to SRS-SPO-004, AC-009, AC-010.\nNever treats bare boolean claims as authorization.",
+        "operationId": "confirm_spoiler_mode_api_v1_sessions__session_id__spoiler_confirmation_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpoilerConfirmationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpoilerConfirmationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/safe-mode": {
+      "post": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Revert To Safe Mode",
+        "description": "Immediately reset session spoiler policy back to SAFE mode.",
+        "operationId": "revert_to_safe_mode_api_v1_sessions__session_id__safe_mode_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/questions": {
+      "post": {
+        "tags": [
+          "questions"
+        ],
+        "summary": "Ask Question",
+        "description": "Submit a question within a viewing session.\n\nEnforces strict server-side boundary:\n1. Validates session existence and viewer identity.\n2. Validates question length and content.\n3. Respects server-controlled spoiler mode and current playback position.\n4. Future chunks (end_time_seconds > current_position_seconds) are filtered out pre-LLM in SAFE mode.",
+        "operationId": "ask_question_api_v1_sessions__session_id__questions_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CitationSchema": {
+        "properties": {
+          "chunk_id": {
+            "type": "string",
+            "title": "Chunk Id"
+          },
+          "start_time_seconds": {
+            "type": "integer",
+            "title": "Start Time Seconds"
+          },
+          "end_time_seconds": {
+            "type": "integer",
+            "title": "End Time Seconds"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "relevance_score": {
+            "type": "number",
+            "title": "Relevance Score",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "chunk_id",
+          "start_time_seconds",
+          "end_time_seconds",
+          "text"
+        ],
+        "title": "CitationSchema",
+        "description": "Viewer-safe evidence reference grounded in subtitle chunks."
+      },
+      "CreateSessionRequest": {
+        "properties": {
+          "title_id": {
+            "type": "string",
+            "title": "Title Id",
+            "description": "ID of the movie title to view"
+          },
+          "locale": {
+            "type": "string",
+            "maxLength": 10,
+            "title": "Locale",
+            "default": "en"
+          },
+          "position_seconds": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Position Seconds",
+            "description": "Initial playback offset",
+            "default": 0
+          },
+          "source": {
+            "$ref": "#/components/schemas/ProgressSource",
+            "default": "manual_slider"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title_id"
+        ],
+        "title": "CreateSessionRequest",
+        "description": "Request to create an active viewing session."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MovieStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "published",
+          "unlisted"
+        ],
+        "title": "MovieStatus"
+      },
+      "ProgressResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "current_position_seconds": {
+            "type": "integer",
+            "title": "Current Position Seconds"
+          },
+          "progress_source": {
+            "$ref": "#/components/schemas/ProgressSource"
+          },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified"
+          },
+          "spoiler_mode": {
+            "$ref": "#/components/schemas/SpoilerMode"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "current_position_seconds",
+          "progress_source",
+          "is_verified",
+          "spoiler_mode",
+          "updated_at"
+        ],
+        "title": "ProgressResponse",
+        "description": "Response containing validated and normalized progress."
+      },
+      "ProgressSource": {
+        "type": "string",
+        "enum": [
+          "verified_integration",
+          "manual",
+          "manual_slider",
+          "voice_cue",
+          "partner_sync",
+          "unknown"
+        ],
+        "title": "ProgressSource"
+      },
+      "QuestionRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Question",
+            "description": "User question about the story"
+          },
+          "client_request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Request Id"
+          },
+          "locale": {
+            "type": "string",
+            "maxLength": 10,
+            "title": "Locale",
+            "default": "en"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "QuestionRequest",
+        "description": "Question submission request.\n\nInvariants:\n- Client CANNOT specify spoiler policy bypass.\n- Question length is strictly bounded (max 500 chars)."
+      },
+      "QuestionResponse": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "answered",
+              "needs_clarification",
+              "insufficient_evidence",
+              "spoiler_confirmation_required",
+              "unsupported_title"
+            ],
+            "title": "Outcome"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CitationSchema"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "clarification_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clarification Prompt"
+          },
+          "confirmation_nonce": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Nonce"
+          },
+          "policy_state": {
+            "type": "string",
+            "title": "Policy State",
+            "default": "safe"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "session_id",
+          "outcome",
+          "created_at"
+        ],
+        "title": "QuestionResponse",
+        "description": "Typed Q&A response contract per 04_API_CONTRACT."
+      },
+      "SessionResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "title": {
+            "$ref": "#/components/schemas/TitleSummarySchema"
+          },
+          "current_position_seconds": {
+            "type": "integer",
+            "title": "Current Position Seconds"
+          },
+          "progress_source": {
+            "$ref": "#/components/schemas/ProgressSource"
+          },
+          "spoiler_mode": {
+            "$ref": "#/components/schemas/SpoilerMode"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "user_id",
+          "title",
+          "current_position_seconds",
+          "progress_source",
+          "spoiler_mode",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SessionResponse",
+        "description": "Response returned upon session creation or state retrieval."
+      },
+      "SpoilerConfirmationRequest": {
+        "properties": {
+          "confirmation_nonce": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Confirmation Nonce",
+            "description": "Cryptographic single-use nonce issued by server"
+          }
+        },
+        "type": "object",
+        "required": [
+          "confirmation_nonce"
+        ],
+        "title": "SpoilerConfirmationRequest",
+        "description": "Request to authorize full spoiler mode using a single-use server nonce."
+      },
+      "SpoilerConfirmationResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "spoiler_mode": {
+            "$ref": "#/components/schemas/SpoilerMode"
+          },
+          "status": {
+            "type": "string",
+            "const": "confirmed",
+            "title": "Status",
+            "default": "confirmed"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "spoiler_mode",
+          "updated_at"
+        ],
+        "title": "SpoilerConfirmationResponse",
+        "description": "Response after consuming single-use spoiler nonce."
+      },
+      "SpoilerMode": {
+        "type": "string",
+        "enum": [
+          "safe",
+          "full"
+        ],
+        "title": "SpoilerMode"
+      },
+      "TitleDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "display_title": {
+            "type": "string",
+            "title": "Display Title"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MovieStatus"
+          },
+          "questions_available": {
+            "type": "boolean",
+            "title": "Questions Available",
+            "default": true
+          },
+          "supported_locales": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supported Locales"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "display_title",
+          "duration_seconds",
+          "status"
+        ],
+        "title": "TitleDetailResponse",
+        "description": "Detailed metadata for a single title."
+      },
+      "TitleListItemSchema": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "display_title": {
+            "type": "string",
+            "title": "Display Title"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          },
+          "availability": {
+            "type": "string",
+            "title": "Availability",
+            "description": "Playback availability state",
+            "default": "available"
+          },
+          "index_status": {
+            "type": "string",
+            "title": "Index Status",
+            "description": "Safe index status: ready, indexing, or unavailable",
+            "default": "ready"
+          },
+          "has_active_index": {
+            "type": "boolean",
+            "title": "Has Active Index",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "display_title",
+          "duration_seconds"
+        ],
+        "title": "TitleListItemSchema",
+        "description": "Catalog list item with viewer-safe indexing status."
+      },
+      "TitleListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TitleListItemSchema"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "TitleListResponse",
+        "description": "Bounded paginated catalog response."
+      },
+      "TitleSummarySchema": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "display_title": {
+            "type": "string",
+            "title": "Display Title"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "display_title"
+        ],
+        "title": "TitleSummarySchema",
+        "description": "Compact summary of a movie title."
+      },
+      "UpdateProgressRequest": {
+        "properties": {
+          "position_seconds": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Position Seconds",
+            "description": "Playback position in integer seconds"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ProgressSource",
+            "default": "manual_slider"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position_seconds"
+        ],
+        "title": "UpdateProgressRequest",
+        "description": "Request to update playback position.\n\nPer 04_API_CONTRACT: Client cannot self-assert verified_integration without\nserver-side cryptographic verification or partner validation."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
