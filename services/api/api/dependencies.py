@@ -4,7 +4,7 @@ from typing import AsyncGenerator
 from fastapi import Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.api.infrastructure.database import get_db_session
+from services.api.infrastructure.database import async_session_factory
 from services.api.infrastructure.repositories import (
     AuditEventRepository,
     ContentVersionRepository,
@@ -17,8 +17,13 @@ from services.api.infrastructure.repositories import (
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Provide a transactional database session for request scope."""
-    async with get_db_session() as session:
-        yield session
+    async with async_session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 def get_current_user_id(x_user_id: str | None = Header(default=None)) -> str:
