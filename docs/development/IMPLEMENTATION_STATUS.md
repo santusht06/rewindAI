@@ -159,27 +159,30 @@
 ### Epic E10: Operational Readiness & Controlled Beta
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `OPS-001` | Documented metrics and privacy-safe operational payloads | P2 | E9 | `VERIFIED` | `services/api/telemetry.py` (Registry, latencies, tokens) | Pending |
-| `OPS-002` | Health probes and operational dashboards | P2 | E10-001 | `VERIFIED` | `/health/live`, `/health/ready`, `/health/metrics` | Pending |
-| `OPS-003` | Sliding-window rate limiter & concurrency protection | P1 | E9 | `VERIFIED` | `services/api/rate_limiting.py` (HTTP 429 response) | Pending |
-| `OPS-004` | Percentiles (p50, p95, p99) and token/cost accounting | P2 | E10-001 | `VERIFIED` | Instrumented in `orchestrator.py` & `logging.py` | Pending |
-| `OPS-005` | Automated database backup, restore, and integrity verification | P1 | E2 | `VERIFIED` | `ops/scripts/backup_restore.py` with SHA-256 validation | Pending |
-| `OPS-006` | Title unpublishing, version deactivation, rights revocation | P1 | E4 | `VERIFIED` | `POST /admin/titles/{id}/unpublish` (`AC-016`) | Pending |
-| `OPS-007` | Production runbooks and incident response playbooks | P2 | E10 | `VERIFIED` | `ops/runbooks/OPERATIONAL_RUNBOOK.md` & `INCIDENT_RESPONSE.md` | Pending |
+| `OPS-001` | Documented metrics and privacy-safe operational payloads | P2 | E9 | `VERIFIED` | `services/api/telemetry.py` (Registry, latencies, tokens) | `868e23c` |
+| `OPS-002` | Health probes and operational dashboards | P2 | E10-001 | `VERIFIED` | `/health/live`, `/health/ready`, `/health/metrics` | `868e23c` |
+| `OPS-003` | Sliding-window rate limiter & concurrency protection | P1 | E9 | `VERIFIED` | `services/api/rate_limiting.py` (HTTP 429 response) | `868e23c` |
+| `OPS-004` | Percentiles (p50, p95, p99) and token/cost accounting | P2 | E10-001 | `VERIFIED` | Instrumented in `orchestrator.py` & `logging.py` | `868e23c` |
+| `OPS-005` | Automated database backup, restore, and integrity verification | P1 | E2 | `VERIFIED` | `ops/scripts/backup_restore.py` with SHA-256 validation | `868e23c` |
+| `OPS-006` | Title unpublishing, version deactivation, rights revocation | P1 | E4 | `VERIFIED` | `POST /admin/titles/{id}/unpublish` (`AC-016`) | `868e23c` |
+| `OPS-007` | Production runbooks and incident response playbooks | P2 | E10 | `VERIFIED` | `ops/runbooks/OPERATIONAL_RUNBOOK.md` & `INCIDENT_RESPONSE.md` | `868e23c` |
 
 ### Epic E11: Production Launch Verification
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
-| `REL-001` | Invariant & compliance checklist sign-off | P1 | E10 | `VERIFIED` | Pre-retrieval filtering, nonce TTL, audit trail | Pending |
-| `REL-002` | Automated test regression gate (100% pass) | P0 | E10 | `VERIFIED` | **50 automated tests passing** across 10 test suites | Pending |
-| `REL-003` | Disaster recovery restore test verification | P1 | OPS-005 | `VERIFIED` | Automated backup/restore test in `test_operational_readiness.py` | Pending |
-| `REL-004` | Release readiness documentation update | P1 | E11 | `VERIFIED` | `docs/development/16_RELEASE_READINESS_REPORT.md` | Pending |
+| `REL-001` | Invariant & compliance checklist sign-off | P1 | E10 | `VERIFIED` | Pre-retrieval filtering, nonce TTL, audit trail | `868e23c` |
+| `REL-002` | Automated test regression gate (100% pass) | P0 | E10 | `VERIFIED` | **50 automated tests passing** across 10 test suites | `868e23c` |
+| `REL-003` | Disaster recovery restore test verification | P1 | OPS-005 | `VERIFIED` | Automated backup/restore test in `test_operational_readiness.py` | `868e23c` |
+| `REL-004` | Release readiness documentation update | P1 | E11 | `VERIFIED` | `docs/development/16_RELEASE_READINESS_REPORT.md` | `868e23c` |
 
 ---
 
 ## 3. Remote Publication Status
-**Remote Push Policy:** Strictly **PROHIBITED** without explicit user authorization.  
-**Current State:** All commits exist locally on branch `main`. **No remote push performed.**
+**Remote Push Policy:** Strictly prohibited without explicit user authorization.  
+**Authorization Event:** Explicit user authorization granted on 2026-10-18 (`push to git`).  
+**Current State:** Branch `main` successfully pushed to `origin/main` (`https://github.com/santusht06/rewindAI.git`).  
+**Remote Sync Status:** **SYNCHRONIZED & UP TO DATE**.
+
 
 
 
