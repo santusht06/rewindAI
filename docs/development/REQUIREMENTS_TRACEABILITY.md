@@ -58,12 +58,12 @@ This matrix maps every functional requirement (SRS), non-functional requirement 
 | **NFR-SEC-002** | Security | Parameterized SQL / safe ORM queries; no raw injection | EPIC-01 / TASK-01-02 | `test_domain_and_persistence.py` | `VERIFIED` |
 | **NFR-SEC-003** | Security | Strict authorization checked at every trust boundary | EPIC-02 / TASK-02-03 | `test_api_v1_endpoints.py` | `VERIFIED` |
 | **NFR-PRIV-001**| Privacy | Logs exclude credentials, raw tokens, unnecessary text | EPIC-01 / TASK-01-01 | `test_logging.py` | `VERIFIED` |
-| **NFR-PERF-001**| Performance | Latency p50/p95/p99 measured and instrumented | EPIC-07 / TASK-07-02 | `test_performance_benchmarks` | BACKLOG |
-| **NFR-SCALE-001**| Scalability | Stateless API server instances | EPIC-01 / TASK-01-03 | `test_stateless_api_concurrency` | BACKLOG |
+| **NFR-PERF-001**| Performance | Latency p50/p95/p99 measured and instrumented | EPIC-07 / TASK-07-02 | `test_operational_readiness.py` | `VERIFIED` |
+| **NFR-SCALE-001**| Scalability | Stateless API server instances & sliding window rate limiter | EPIC-01 / TASK-01-03 | `test_operational_readiness.py` | `VERIFIED` |
 | **NFR-OBS-001** | Observability | Correlation/Request ID on every request, trace, log | EPIC-01 / TASK-01-01 | `test_health_and_errors.py` | `VERIFIED` |
 | **NFR-ACC-001** | Accessibility | Remote-only D-pad navigation; visible focus; 10-ft UI | EPIC-06 / TASK-06-01 | `test_tv_client.py` | `VERIFIED` |
 | **NFR-MAINT-001**| Maintainability| Versioned API (`/api/v1`) & reversible database migrations | EPIC-01 / TASK-01-02 | `test_domain_and_persistence.py` | `VERIFIED` |
-| **NFR-DR-001**  | DR | Documented recovery, backup, and index rebuild workflows | EPIC-07 / TASK-07-03 | `test_disaster_recovery_plan` | BACKLOG |
+| **NFR-DR-001**  | DR | Documented recovery, backup, and index rebuild workflows | EPIC-07 / TASK-07-03 | `test_operational_readiness.py` | `VERIFIED` |
 | **NFR-COST-001**| Cost | Token usage & embedding costs tracked per request | EPIC-04 / TASK-04-06 | `services/api/ai/provider.py` | `VERIFIED` |
 
 ---
@@ -85,10 +85,30 @@ This matrix maps every functional requirement (SRS), non-functional requirement 
 | **AC-011** | Cross-User Access | User B cannot access User A's session or questions | Auth & Session Security | `test_api_v1_endpoints.py` | `VERIFIED` |
 | **AC-012** | Idempotent Ingestion | Re-submitting same asset does not duplicate chunks | Ingestion Worker | `test_ingestion_pipeline.py` | `VERIFIED` |
 | **AC-013** | Failed Reindex | Staging index failure leaves last good index active | Index Manager | `test_ingestion_pipeline.py` | `VERIFIED` |
-| **AC-014** | Cache Policy Correctness | Stricter policy/progress cannot hit full-spoiler cached answer | Cache Key Generator | `test_ac014_cache_policy_isolation` | BACKLOG |
+| **AC-014** | Cache Policy Correctness | Stricter policy/progress cannot hit full-spoiler cached answer | Cache Key Generator | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
 | **AC-015** | Provider Outage | LLM timeout returns controlled retryable error, no hallucination | LLM Adapter | `test_rag_and_spoiler_controls.py` | `VERIFIED` |
-| **AC-016** | Rights Revocation | Revoking authorization unpublishes title and invalidates cache | Rights / Admin Service | `test_api_v1_endpoints.py` | `VERIFIED` |
+| **AC-016** | Rights Revocation | Revoking authorization unpublishes title and invalidates cache | Rights / Admin Service | `test_operational_readiness.py` | `VERIFIED` |
 | **AC-017** | Remote-Only TV Use | TV remote D-pad allows complete journey from title to answer | TV Web / Client App | `test_tv_client.py` & `test_e2e_user_journeys.py` | `VERIFIED` |
 | **AC-018** | Concurrent Publish | Concurrent index publishes resolve to exactly one active index | Index Manager | `test_ingestion_pipeline.py` | `VERIFIED` |
 | **AC-019** | Malformed Timestamps | Reversed/corrupt timestamps rejected at ingestion | Ingestion Parser | `test_ingestion_pipeline.py` | `VERIFIED` |
 | **AC-020** | Logging Privacy | Secrets & sensitive question text redacted from logs | Logging Middleware | `test_logging.py` | `VERIFIED` |
+
+---
+
+## 4. Fire TV & Vega OS Platform & 5-Minute Live Demo Requirements
+
+| Requirement ID | Summary | Target Implementation | Test Suite | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **PLAT-001** | Formal Fire OS vs. Vega OS target selection ADR | `docs/development/DECISIONS.md` (ADR-005) | `test_tv_platform_demo.py` | `VERIFIED` |
+| **PLAT-002** | Category alignment statement (AI-Enhanced Viewing & Multi-Modal UX) | `docs/development/DECISIONS.md` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **PLAT-003** | W3C TV Web App Manifest & Amazon Web App Config | `apps/tv-client/manifest.json`, `amazon-webapp-config.json` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **PLAT-004** | Automated TV app packaging & checksum generator | `ops/scripts/package_tv_app.py` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **PLAT-005** | TV platform & manifest regression test coverage | `tests/test_tv_platform_demo.py` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **DEMO-001** | Step-by-step 5-minute live demo rehearsal guide | `docs/demo/DEMO_SCRIPT_AND_REHEARSAL_GUIDE.md` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **DEMO-002** | S1 Welcome & Remote Setup demo journey | `apps/tv-client/js/app.js` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **DEMO-003** | S2/S3 Catalog & Playback Sync demo journey | `apps/tv-client/js/app.js` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **DEMO-004** | S4/S5 Grounded In-Bounds AI Answers & Citations | `services/api/ai/orchestrator.py` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **DEMO-005** | S7 Adversarial Spoiler Gate & Safe Modal | `services/api/ai/orchestrator.py` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **DEMO-006** | S8/S9 Operations & Diagnostics demo journey | `apps/tv-client/js/app.js` | `test_tv_platform_demo.py` | `VERIFIED` |
+| **DEMO-007** | Automated E2E 5-minute demo journey execution | `tests/test_tv_platform_demo.py` | `test_tv_platform_demo.py` | `VERIFIED` |
+

@@ -116,10 +116,13 @@ class RagOrchestrator:
             r"\bwhat happens next\b",
             r"\bhow does it end\b",
             r"\bwho dies at the end\b",
+            r"\bat the end\b",
+            r"\bend of the movie\b",
+            r"\bend of the film\b",
             r"\bspoiler\b",
             r"\bfuture\b",
             r"\blater in the movie\b",
-            r"\bend of the film\b",
+            r"\blater on\b",
         ]
         is_asking_future = any(re.search(p, lower_q) for p in future_patterns)
 

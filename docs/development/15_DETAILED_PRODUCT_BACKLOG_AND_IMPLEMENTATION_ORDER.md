@@ -407,19 +407,31 @@ A passing compile alone is not sufficient. A mocked test is not evidence that a 
 ## 9. Required live status table
  
  | Task ID | Task | Priority | Dependencies | Status | Verification evidence | Commit | Blocker / next action |
- |---|---|---|---|---|---|---|---|
--| DISC-001 | Read requirements | P0 | None | `DONE` | Traceability matrix created | `5774307` | Complete |
--| BE-FOUND-001 | Confirm backend stack | P0 | E0 | `DONE` | Config & errors tested | `c211695` | Complete |
--| BE-DATA-001 | Implement domain model | P0 | E1 | `DONE` | Tables & migrations tested | `c506462` | Complete |
--| BE-API-001 | Define API contract | P0 | E1 | `DONE` | OpenAPI schema matching | `d806bdf` | Complete |
--| BE-INGEST-001 | Validate authorized asset | P1 | E1, E2, rights decision | `DONE` | Parser & pipeline tested | `5a20ba5` | Complete |
--| BE-AI-001 | Implement retrieval | P1 | E2, E4 | `DONE` | Grounded Q&A tested | `7dd294a` | Complete |
--| BE-SAFE-001 | Enforce spoiler policy | P0 for Q&A | E3, E5 | `DONE` | Boundary & nonces tested | `7dd294a` | Complete |
--| G1 | Backend acceptance gate | P0 | E1–E6 | `DONE` | 41/41 backend tests pass | `7dd294a` | Passed |
--| FE-FOUND-001 | Frontend foundation | P1 | G1 verified | `DONE` | TV client mounted at /tv | `020fbd3` | Complete |
--| FE-TV-001 | Core TV user journey | P1 | E7 | `DONE` | 9 screens, D-pad navigation | `020fbd3` | Complete |
--| QA-E2E-001 | Full user journey E2E | P1 | E8 | `DONE` | Comprehensive E2E test pass | `020fbd3` | Complete |
--| OPS-001 | Operational metrics | P2 | E9 | `DONE` | Telemetry, rate limit, DR | `868e23c` | Complete |
+|---|---|---|---|---|---|---|---|
+| DISC-001 | Read requirements | P0 | None | `DONE` | Traceability matrix created | `5774307` | Complete |
+| BE-FOUND-001 | Confirm backend stack | P0 | E0 | `DONE` | Config & errors tested | `c211695` | Complete |
+| BE-DATA-001 | Implement domain model | P0 | E1 | `DONE` | Tables & migrations tested | `c506462` | Complete |
+| BE-API-001 | Define API contract | P0 | E1 | `DONE` | OpenAPI schema matching | `d806bdf` | Complete |
+| BE-INGEST-001 | Validate authorized asset | P1 | E1, E2, rights decision | `DONE` | Parser & pipeline tested | `5a20ba5` | Complete |
+| BE-AI-001 | Implement retrieval | P1 | E2, E4 | `DONE` | Grounded Q&A tested | `7dd294a` | Complete |
+| BE-SAFE-001 | Enforce spoiler policy | P0 for Q&A | E3, E5 | `DONE` | Boundary & nonces tested | `7dd294a` | Complete |
+| G1 | Backend acceptance gate | P0 | E1–E6 | `DONE` | 41/41 backend tests pass | `7dd294a` | Passed |
+| FE-FOUND-001 | Frontend foundation | P1 | G1 verified | `DONE` | TV client mounted at /tv | `020fbd3` | Complete |
+| FE-TV-001 | Core TV user journey | P1 | E7 | `DONE` | 9 screens, D-pad navigation | `020fbd3` | Complete |
+| QA-E2E-001 | Full user journey E2E | P1 | E8 | `DONE` | Comprehensive E2E test pass | `020fbd3` | Complete |
+| OPS-001 | Operational metrics | P2 | E9 | `DONE` | Telemetry, rate limit, DR | `868e23c` | Complete |
+| PLAT-001 | Fire OS vs. Vega OS Architecture ADR | P0 | FE-TV-001 | `DONE` | ADR-005 in DECISIONS.md | pending | Complete |
+| PLAT-002 | Category Alignment Statement | P0 | PLAT-001 | `DONE` | AI-Enhanced & Multi-Modal in DECISIONS.md | pending | Complete |
+| PLAT-003 | W3C TV Web Manifest & Config | P0 | PLAT-001 | `DONE` | manifest.json & amazon-webapp-config.json | pending | Complete |
+| PLAT-004 | TV Packaging Utility | P0 | PLAT-003 | `DONE` | ops/scripts/package_tv_app.py verified | pending | Complete |
+| PLAT-005 | Platform Packaging Automated Test | P0 | PLAT-004 | `DONE` | tests/test_tv_platform_demo.py passed | pending | Complete |
+| DEMO-001 | 5-Minute Rehearsal Script & Guide | P0 | FE-TV-001 | `DONE` | docs/demo/DEMO_SCRIPT_AND_REHEARSAL_GUIDE.md | pending | Complete |
+| DEMO-002 | S1 Welcome & Remote Demo Flow | P0 | DEMO-001 | `DONE` | Verified in test_tv_platform_demo.py | pending | Complete |
+| DEMO-003 | S2/S3 Catalog & Playback Sync Flow | P0 | DEMO-001 | `DONE` | Verified in test_tv_platform_demo.py | pending | Complete |
+| DEMO-004 | S4/S5 Grounded In-Bounds AI Answers | P0 | DEMO-001 | `DONE` | Verified in test_tv_platform_demo.py | pending | Complete |
+| DEMO-005 | S7 Adversarial Spoiler Gate & Safe Modal | P0 | DEMO-001 | `DONE` | Verified in test_tv_platform_demo.py | pending | Complete |
+| DEMO-006 | S8/S9 Operations & Revocation Flow | P0 | DEMO-001 | `DONE` | Verified in test_tv_platform_demo.py | pending | Complete |
+| DEMO-007 | Automated Demo Journey Test Suite | P0 | DEMO-001..006 | `DONE` | 5/5 passed in test_tv_platform_demo.py | pending | Complete |
 
 
 The live status table must be expanded to include every leaf task in the actual implementation backlog. Do not leave a task marked `NOT_STARTED` if work has begun; do not change it to `DONE` without evidence.

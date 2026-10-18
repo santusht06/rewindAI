@@ -59,3 +59,41 @@ This document logs significant architectural and implementation decisions, their
   2. *Fire TV Web App / Progressive Web App (10-Foot UI):* Supported natively by Fire TV Web App Runtime (W3C standards), standard HTML5/CSS/JavaScript with spatial navigation, testable on any browser or TV emulator, full remote key code support (`KeyCode 38, 40, 37, 39, 13, 27`).
 - **Decision:** Implement a **10-foot TV Web Client** with dedicated spatial navigation, high-contrast focus rings, remote key event handlers, and remote-accessible keyboard/dial input.
 - **Consequences:** Ensures full compliance with Amazon Fire TV 10-foot UX guidelines and enables rapid automated browser-based and E2E testing.
+
+---
+
+## ADR-005: Fire OS vs Vega OS Target Selection & Dual-Target Deployment Strategy
+
+- **Status:** APPROVED
+- **Date:** 2026-10-18
+- **Context:** Rewind must deliver a demo-ready application that runs on Amazon television platforms (Fire OS or Vega OS). Amazon is transitioning from Fire OS (Android AOSP fork) to Vega OS (Linux microkernel runtime executing web technologies and React Native, dropping Android/AOSP). The application must run reliably without platform lock-in.
+- **Alternatives Evaluated:**
+  1. *Native Android APK (Kotlin/Java):* Compatible only with legacy Fire OS (Fire TV Stick 4K Gen 1/2, Fire TV Cube). Completely incompatible with new Vega OS devices because Vega OS does not include the Android ART runtime.
+  2. *Vega OS C++ Native / React Native only:* Limits testing to internal Amazon hardware not generally accessible outside developer programs, breaking standard local verification.
+  3. *Universal W3C 10-Foot Television Web Application (`HTML5 / Modern CSS / Vanilla JS / W3C Spatial Navigation`):* 
+     - Supported natively on **Fire OS** via Amazon Web App Tester, Amazon Hosted Web Apps, and standard Chromium-based System WebView APK wrapper.
+     - Supported natively on **Vega OS**, which uses modern Web Standards / Chromium engine as its primary first-party application execution environment.
+     - Allows zero-dependency testing on any television browser, emulator, or desktop simulator while guaranteeing 100% binary/runtime compatibility across both Fire OS and Vega OS.
+- **Decision:** Adopt the **Universal 10-Foot Television Web Application** architecture with explicit dual-target packaging:
+  - For **Vega OS:** Packaged as a standard W3C Web App with `manifest.json` configured for TV landscape fullscreen execution.
+  - For **Fire OS:** Packaged with `amazon-webapp-config.json` for immediate testing on Amazon Web App Tester and Amazon Hosted Web Apps.
+  - For **Evaluation / Demo Rehearsal:** Delivered directly from FastAPI at `/tv/` with an interactive on-screen Fire TV Remote simulator overlay.
+- **Consequences:** Eliminates OS fragmentation risk; guarantees single-codebase portability across all current Fire OS devices and upcoming Vega OS hardware.
+
+---
+
+# 2. Priority Category-Fit Statement (Challenge Alignment)
+
+**Document Reference:** `16_FIRE_TV_VEGA_OS_DEMO_CORE_REQUIREMENT.md`  
+**Evaluation Categories:** *AI-enhanced viewing, sports, fitness, family entertainment, multi-modal UX, computer vision.*
+
+### Primary Category: AI-Enhanced Viewing
+- **Rationale:** Rewind is fundamentally designed to transform passive media consumption into an interactive, grounded, story-aware companion experience. By synchronizing strictly to the viewer's current playback position, it answers questions ("Who is that?", "Why did they betray them?", "What happened previously?") with mathematical certainty that later plot twists remain concealed.
+- **Exact User-Visible Demo Feature:** The 10-foot **Companion Console** (`S4`) and **Grounded Answer Screen** (`S5`), showing verbatim subtitle quotes, speaker labels, and clickable scene jump timestamps [MM:SS] matching the viewer's current timeline.
+- **Acceptance Criteria & Verification:** Answers must cite verified timestamped subtitle cues; attempts to query future plot events in `safe` mode must trigger server-side spoiler protection without leaking information (`AC-004`, `SRS-SPO-001`..`006`).
+
+### Secondary Category: Multi-Modal UX
+- **Rationale:** Traditional TV interfaces require clumsy onscreen keyboard hunting. Rewind unifies remote D-pad directional navigation, an OLED vanguard double-bezel visual hierarchy, digital clock position synchronization, and auditory story dialogue into a cohesive 10-foot interaction model.
+- **Exact User-Visible Demo Feature:** The **Spatial D-Pad Remote Engine** with on-screen Remote Simulator (`apps/tv-client/js/remote.js`), electric-indigo focus rings (`#818cf8`), single-press question presets ("Explain Current Scene", "Catch Me Up", "Who is on Screen?"), and modal focus trapping.
+- **Acceptance Criteria & Verification:** The interface is 100% navigable with Arrow keys (`Up/Down/Left/Right`), `OK/Enter`, and `Back/Escape` without mouse, touch, or external hardware dependencies.
+

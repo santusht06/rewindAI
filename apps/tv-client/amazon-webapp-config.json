@@ -1,0 +1,28 @@
+{
+  "id": "com.amazon.firetv.rewind",
+  "title": "Rewind AI Story Companion",
+  "version": "1.0.0",
+  "type": "hosted",
+  "url": "http://127.0.0.1:8000/tv/",
+  "launch_path": "/tv/index.html",
+  "targets": ["FireTV", "VegaTV"],
+  "fullscreen": true,
+  "orientation": "landscape",
+  "permissions": [
+    "INTERNET",
+    "ACCESS_NETWORK_STATE"
+  ],
+  "features": {
+    "dpad_navigation": true,
+    "hardware_acceleration": true,
+    "webgl": true,
+    "safe_area_overscan": true
+  },
+  "metadata": {
+    "author": "Rewind Core Team",
+    "category": "AI-Enhanced Viewing",
+    "secondary_category": "Multi-Modal UX",
+    "target_resolution": "1080p_and_4k",
+    "recommended_hardware": "Fire TV Stick 4K, Fire TV Cube, Vega OS Smart TV"
+  }
+}

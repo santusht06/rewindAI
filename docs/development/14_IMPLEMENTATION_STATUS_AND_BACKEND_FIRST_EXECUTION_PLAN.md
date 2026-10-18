@@ -216,6 +216,16 @@ Begin after the backend acceptance gate passes. Use the documented UI stack and 
 
 **Release gate:** **PASSED (VERIFIED)** — Release Candidate 1 verified and documented.
 
+### Phase 11 — Fire TV & Vega OS Platform Architecture, Packaging & 5-Minute Live Demo (Epics E12 & E13)
+
+- [x] `PLAT-001` Target platform selection ADR-005 (Fire OS + Vega OS dual-target architecture) and category-fit statement. (Commit pending)
+- [x] `PLAT-002` W3C TV Web Application Manifest (`manifest.json`) and Amazon Web App Configuration (`amazon-webapp-config.json`). (Commit pending)
+- [x] `PLAT-003` Automated TV packaging utility (`ops/scripts/package_tv_app.py`) creating signed/checksummed ZIP bundle. (Commit pending)
+- [x] `DEMO-001` 5-minute live demo rehearsal guide and step-by-step presentation script (`docs/demo/DEMO_SCRIPT_AND_REHEARSAL_GUIDE.md`). (Commit pending)
+- [x] `DEMO-002` Automated TV platform and demo regression test suite (`tests/test_tv_platform_demo.py` — 5 tests passed). (Commit pending)
+
+**Exit gate:** Fire TV and Vega OS packaging verified, manifest validation passed, 5-minute live demo sequence regression tested. **PASSED (VERIFIED)**
+
 ---
 
 ## 5. Live implementation status dashboard
@@ -238,6 +248,8 @@ Begin after the backend acceptance gate passes. Use the documented UI stack and 
 | FE-UI | Frontend screens and user journeys | `DONE` | S1-S9 screens, 10-ft D-pad remote (3 tests) | `020fbd3` | Complete |
 | E2E | End-to-end integration and regression | `DONE` | Comprehensive user journey (1 test) | `020fbd3` | Complete |
 | REL | Production readiness and release candidate | `DONE` | Telemetry, rate limiting, DR, runbooks (5 tests) | `868e23c` | Release Candidate 1 Ready |
+| PLAT | Fire TV & Vega OS packaging & architecture | `DONE` | ADR-005, W3C manifest, amazon-webapp-config, packager | pending | Complete |
+| DEMO | 5-Minute live demo & rehearsal suite | `DONE` | 5-min script, E2E demo automated test (5 tests) | pending | Complete |
 
 The summary rows above are roll-ups. Create separate child tasks for each item before implementation. Update a summary row only from its child-task evidence; do not use the summary table as a substitute for detailed tracking.
 

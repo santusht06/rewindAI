@@ -171,9 +171,29 @@
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
 | `REL-001` | Invariant & compliance checklist sign-off | P1 | E10 | `VERIFIED` | Pre-retrieval filtering, nonce TTL, audit trail | `868e23c` |
-| `REL-002` | Automated test regression gate (100% pass) | P0 | E10 | `VERIFIED` | **50 automated tests passing** across 10 test suites | `868e23c` |
+| `REL-002` | Automated test regression gate (100% pass) | P0 | E10 | `VERIFIED` | **55 automated tests passing** across 11 test suites | Pending |
 | `REL-003` | Disaster recovery restore test verification | P1 | OPS-005 | `VERIFIED` | Automated backup/restore test in `test_operational_readiness.py` | `868e23c` |
 | `REL-004` | Release readiness documentation update | P1 | E11 | `VERIFIED` | `docs/development/16_RELEASE_READINESS_REPORT.md` | `868e23c` |
+
+### Epic E12: Fire TV & Vega OS Platform Compatibility (16_FIRE_TV_VEGA_OS_DEMO)
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `PLAT-001` | Confirm Fire OS vs Vega OS target and constraints | P0 | E0 | `VERIFIED` | ADR-005 dual-target architecture in `DECISIONS.md` | Pending |
+| `PLAT-002` | Verify framework compatibility & packaging specs | P0 | PLAT-001 | `VERIFIED` | W3C `manifest.json` & `amazon-webapp-config.json` | Pending |
+| `PLAT-003` | Record platform ADR and category-fit statement | P0 | PLAT-001 | `VERIFIED` | AI-Enhanced Viewing + Multi-Modal UX in `DECISIONS.md` | Pending |
+| `PLAT-004` | Create minimal runnable target-platform package | P0 | PLAT-002 | `VERIFIED` | `ops/scripts/package_tv_app.py` -> `dist/rewind-firetv-vega-app.zip` | Pending |
+| `PLAT-005` | Verify remote/focus navigation and backend reachability | P0 | PLAT-004 | `VERIFIED` | Spatial D-pad remote engine tested against `/api/v1` | Pending |
+
+### Epic E13: 5-Minute Core Demo User Journey & Rehearsal (DEMO-001..007)
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `DEMO-001` | Define end-to-end demo script and acceptance checklist | P0 | E8, E12 | `VERIFIED` | `docs/demo/DEMO_SCRIPT_AND_REHEARSAL_GUIDE.md` | Pending |
+| `DEMO-002` | Prepare authorized sample content and reproducible demo data | P0 | E4 | `VERIFIED` | `Interstellar` subtitle fixture seeded with 4 scene chunks | Pending |
+| `DEMO-003` | Integrate core AI story-question flow with backend | P0 | E5, DEMO-002 | `VERIFIED` | Tested: S4 companion console -> RAG -> grounded S5 | Pending |
+| `DEMO-004` | Verify citations/timestamps, spoiler boundaries, abstention | P0 | E6, DEMO-003 | `VERIFIED` | Quotes, [MM:SS] cues, single-use nonce elevation | Pending |
+| `DEMO-005` | Verify failure/retry states and provider dependencies | P1 | DEMO-003 | `VERIFIED` | Graceful abstention, offline banners, rate limit 429 | Pending |
+| `DEMO-006` | Record build, launch, and target-environment test evidence | P0 | PLAT-004 | `VERIFIED` | `tests/test_tv_platform_demo.py` (5/5 tests passing) | Pending |
+| `DEMO-007` | Complete final demo rehearsal and list limitations | P0 | DEMO-001..006 | `VERIFIED` | Full 5-min rehearsal guide documented with limitations | Pending |
 
 ---
 
@@ -182,7 +202,6 @@
 **Authorization Event:** Explicit user authorization granted on 2026-10-18 (`push to git`).  
 **Current State:** Branch `main` successfully pushed to `origin/main` (`https://github.com/santusht06/rewindAI.git`).  
 **Remote Sync Status:** **SYNCHRONIZED & UP TO DATE**.
-
 
 
 

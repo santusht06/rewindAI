@@ -326,6 +326,47 @@
   - `git status`: `Your branch is up to date with 'origin/main'. nothing to commit, working tree clean`
 - **Remote Push:** **SUCCESSFULLY PUBLISHED TO GITHUB**.
 
+---
+
+## 2026-10-18 — Phase 5: Fire TV & Vega OS Platform Architecture, Packaging & 5-Minute Live Demo Rehearsal (Epics E12 & E13)
+
+- **Goal:** Fulfill all core requirements from `16_FIRE_TV_VEGA_OS_DEMO_CORE_REQUIREMENT.md`: target platform selection (Fire OS vs. Vega OS ADR), category alignment statement, TV packaging and manifest specifications, automated packaging script, step-by-step 5-minute rehearsal guide, and automated regression test coverage.
+- **Actions Taken:**
+  1. **Architecture Decision Record (ADR-005) & Category Fit (`docs/development/DECISIONS.md`):**
+     - Formally recorded decision to target **both Fire OS and Vega OS** using a Universal W3C 10-foot Web Application runtime.
+     - Documented architectural analysis: Vega OS deprecates Android runtime in favor of a modern Linux microkernel and Web engine. A standards-compliant TV Web App runs natively on both Fire OS (via Amazon Web App Tester / Hosted Web App / System WebView) and Vega OS (via Chromium Web Engine), providing 100% single-codebase cross-platform execution.
+     - Published Category Alignment Statement: Primary: **AI-Enhanced Viewing**; Secondary: **Multi-Modal UX**.
+  2. **TV Manifests & Amazon Web App Configuration (`apps/tv-client/`):**
+     - Created `apps/tv-client/manifest.json`: W3C Television Web Application Manifest specifying `display: "fullscreen"`, `orientation: "landscape"`, `theme_color: "#06080d"`, and `tv: { "spatial_navigation": true, "input_mode": "dpad" }`.
+     - Created `apps/tv-client/amazon-webapp-config.json`: Amazon Fire TV and Vega OS packaging configuration targeting `["FireTV", "VegaTV"]` with strict permissions and orientation.
+     - Linked manifest in `apps/tv-client/index.html` `<head>`.
+  3. **Automated TV App Packager (`ops/scripts/package_tv_app.py`):**
+     - Created automated packager validating manifests, TV viewport configuration, and spatial navigation scripts before creating `dist/rewind-firetv-vega-app.zip`.
+     - Generates SHA-256 checksum manifest `dist/package-manifest.json` for verified TV store and sideload submission.
+  4. **Adversarial Spoiler Prompt Enhancement (`services/api/ai/orchestrator.py`):**
+     - Expanded `future_patterns` regular expressions to include `r"\bat the end\b"`, `r"\bend of the movie\b"`, `r"\blater on\b"` ensuring adversarial queries like "at the end of the movie" reliably trigger spoiler gates.
+  5. **5-Minute Live Demo Script & Rehearsal Guide (`docs/demo/DEMO_SCRIPT_AND_REHEARSAL_GUIDE.md`):**
+     - Complete step-by-step script for 5-minute judge/stakeholder presentation:
+       - S1: Hook & Instant 10-ft TV Remote Entry (0:00 - 0:45)
+       - S2/S3: Catalog Discovery & Playback Sync (0:45 - 1:30)
+       - S4/S5: Grounded In-Bounds AI Answers & Scene Citations (1:30 - 2:30)
+       - S7: The High-Stakes Spoiler Gate & Safe Abstention (2:30 - 3:30)
+       - S8/S9: Enterprise Ops, Telemetry & Rights Revocation (3:30 - 4:30)
+       - Conclusion: Vega OS Architecture & Impact (4:30 - 5:00)
+     - Includes D-pad navigation keystrokes, judge talking points, fail-safes, and rehearsal checklist.
+  6. **Automated TV Platform & Demo Regression Suite (`tests/test_tv_platform_demo.py`):**
+     - `test_tv_manifest_and_amazon_config_validity`: Validates JSON schema, Vega OS & Fire TV targets.
+     - `test_tv_packaging_script_execution`: Validates packaging script creates zip bundle and checksum manifest.
+     - `test_five_minute_demo_script_documentation`: Validates rehearsal guide sections, keystrokes, and fail-safes.
+     - `test_demo_e2e_sequence_execution`: Executes the exact 5-minute demo journey via API and verifies every response.
+     - `test_adr_005_and_category_alignment_documented`: Asserts ADR-005 and category-fit presence in `DECISIONS.md`.
+- **Verification Commands Executed:**
+  - `.venv/bin/pytest -v`: **55 passed in 1.15s** across 11 test suites
+  - `python ops/scripts/package_tv_app.py`: Generated valid TV package in `dist/rewind-firetv-vega-app.zip`
+- **Commit:** Pending.
+- **Remote Push:** Scheduled upon commit.
+
+
 
 
 
