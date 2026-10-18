@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "rewind-ai"
 version = "0.1.0"
@@ -41,3 +45,7 @@ target-version = "py312"
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+
+[tool.setuptools.packages.find]
+include = ["services*"]
+namespaces = false
