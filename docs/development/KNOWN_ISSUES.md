@@ -30,6 +30,8 @@ This document logs known limitations, open decisions, environmental constraints,
 | **LIM-04** | Admin Authorization | The current admin dependency is a development placeholder and does not establish a secure operator identity or role boundary. | Do not expose admin routes to untrusted networks. Replace the placeholder with authenticated, role-based authorization and add adversarial tests before beta/production exposure. |
 | **LIM-05** | Readiness Probe | `/health/ready` currently returns static component statuses rather than checking database connectivity or other runtime dependencies. | Do not use it as a production readiness gate until dependency probes are implemented and tested. |
 | **LIM-06** | Static Quality Checks | Workspace baseline on 2026-10-18: `ruff check .` reported 130 findings; `mypy services` reported 117 errors across 12 files. | Triage findings, resolve them in focused changes, and establish clean lint/type-check release gates. Re-run with recorded tool versions because counts may change. |
+| **LIM-07** | Progress Provenance | The progress update handler normalizes `verified_integration` but treats a client-supplied `partner_sync` source as verified. | Do not trust caller-supplied `partner_sync` or `is_verified` until partner authentication and server-side source validation are implemented and tested. |
+| **LIM-08** | OpenAPI Snapshot | The checked-in schema can drift from runtime routes and response descriptions. | Run `python ops/scripts/export_openapi.py` after API changes and `python ops/scripts/export_openapi.py --check` in verification. |
 
 ## Release Evidence Caveat
 

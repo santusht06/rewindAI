@@ -46,6 +46,8 @@ Living project checklist for implemented features, verified changes, and remaini
 - [ ] Verify deployment, migration, backup/restore, and rollback procedures in the intended beta/production environment.
 - [ ] Replace the fallback viewer identity and development admin check with production-grade authentication/authorization; test unauthorized access paths.
 - [ ] Make readiness probes verify required dependencies such as database connectivity.
+- [ ] Validate progress provenance server-side; do not mark caller-supplied `partner_sync` as verified without partner authentication.
+- [ ] Keep `docs/api/openapi.json` synchronized with the runtime schema using `ops/scripts/export_openapi.py --check`.
 
 ### Product and Platform Decisions
 
@@ -74,3 +76,4 @@ Living project checklist for implemented features, verified changes, and remaini
 | 2026-10-18 | Added explicit setuptools build backend and restricted package discovery to `services`; updated README install/run instructions; created this checklist. | `pip install -e '.[dev]'` succeeded; `pytest -q` passed (55 tests); Uvicorn started and `/health/live` returned `status: alive`. |
 | 2026-10-18 | Expanded README, added local setup/API guide, documented identity/admin/readiness limitations, and clarified beta/production and platform/spoiler evidence. | Documentation review and `git diff --check`; setup and migration commands were verified in the local environment. |
 | 2026-10-18 | Recorded the current lint and type-check baseline as open engineering work. | `ruff check .`: 130 findings; `mypy services`: 117 errors across 12 files. |
+| 2026-10-18 | Added a route-by-route API reference and OpenAPI export/check utility; refreshed the checked-in schema and documented the progress-provenance caveat. | `python ops/scripts/export_openapi.py --check` passed; `pytest -q tests/test_api_v1_endpoints.py` passed (6 tests); `ruff check ops/scripts/export_openapi.py` passed. |

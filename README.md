@@ -56,6 +56,7 @@ Rewind does not currently synchronize with third-party streaming playback or obt
 ## Documentation
 
 - [Local setup and development guide](docs/GETTING_STARTED.md)
+- [Developer API reference](docs/API_REFERENCE.md)
 - [Product requirements](Rewind_Complete_Project_Documentation_Package/requirements/01_PRODUCT_REQUIREMENTS.md)
 - [System architecture](Rewind_Complete_Project_Documentation_Package/requirements/05_SYSTEM_ARCHITECTURE.md)
 - [API contract](Rewind_Complete_Project_Documentation_Package/requirements/04_API_CONTRACT.md)

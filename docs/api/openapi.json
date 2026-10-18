@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Rewind AI Companion API",
-    "description": "Rewind \u2014 Fire TV AI Story Companion Backend API",
+    "description": "Rewind — Fire TV AI Story Companion Backend API",
     "version": "0.1.0"
   },
   "paths": {
@@ -45,6 +45,29 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Health Ready Health Ready Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/metrics": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Operational Metrics and Latency Percentiles",
+        "operationId": "health_metrics_health_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Metrics Health Metrics Get"
                 }
               }
             }
@@ -552,7 +575,7 @@
           "questions"
         ],
         "summary": "Ask Question",
-        "description": "Submit a question within a viewing session.\n\nEnforces strict server-side boundary:\n1. Validates session existence and viewer identity.\n2. Validates question length and content.\n3. Respects server-controlled spoiler mode and current playback position.\n4. Future chunks (end_time_seconds > current_position_seconds) are filtered out pre-LLM in SAFE mode.",
+        "description": "Submit a question within a viewing session.\n\nDelegates to RagOrchestrator to enforce:\n1. Session existence and viewer ownership.\n2. Server-controlled spoiler policy and playback position.\n3. Pre-retrieval evidence boundary filtering (future chunks are physically excluded).\n4. Single-use nonce flow for future spoiler requests.\n5. Verified citation grounding and safe abstention.",
         "operationId": "ask_question_api_v1_sessions__session_id__questions_post",
         "parameters": [
           {
@@ -737,6 +760,67 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Publish Version Api V1 Admin Titles  Title Id  Publish Version  Version Id  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/titles/{title_id}/unpublish": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Unpublish Title",
+        "description": "Atomically deactivate active content versions and revoke published status (OPS-006, AC-016).",
+        "operationId": "unpublish_title_api_v1_admin_titles__title_id__unpublish_post",
+        "parameters": [
+          {
+            "name": "title_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Title Id"
+            }
+          },
+          {
+            "name": "x-admin-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Unpublish Title Api V1 Admin Titles  Title Id  Unpublish Post"
                 }
               }
             }
