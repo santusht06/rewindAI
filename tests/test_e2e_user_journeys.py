@@ -15,9 +15,11 @@ Verifies:
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from services.api.api.dependencies import get_db
+from services.api.config import settings
 from services.api.domain.models import MovieStatus, ProgressSource, SpoilerMode
 from services.api.infrastructure.repositories import (
     ContentVersionRepository,
@@ -50,6 +52,8 @@ MANN: The data was faked! There is no surface, only frozen clouds. I cannot die 
 COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional space.
 """
 
+TEST_ADMIN_TOKEN = "test-admin-token-for-integration-tests"
+
 
 @pytest_asyncio.fixture
 async def isolated_e2e_db():
@@ -67,6 +71,8 @@ async def isolated_e2e_db():
 
 @pytest_asyncio.fixture
 async def e2e_client(isolated_e2e_db: AsyncSession):
+    previous_admin_token = settings.admin_api_token
+    settings.admin_api_token = SecretStr(TEST_ADMIN_TOKEN)
     app = create_app()
 
     async def override_get_db():
@@ -74,9 +80,12 @@ async def e2e_client(isolated_e2e_db: AsyncSession):
 
     app.dependency_overrides[get_db] = override_get_db
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
-    app.dependency_overrides.clear()
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            yield client
+    finally:
+        app.dependency_overrides.clear()
+        settings.admin_api_token = previous_admin_token
 
 
 @pytest.mark.asyncio
@@ -95,7 +104,7 @@ async def test_complete_e2e_story_companion_journey(e2e_client: AsyncClient, iso
         status=MovieStatus.PUBLISHED,
     )
 
-    admin_headers = {"X-Admin-Role": "content_manager"}
+    admin_headers = {"X-Admin-Token": TEST_ADMIN_TOKEN}
     ingest_res = await e2e_client.post(
         f"/api/v1/admin/titles/{movie.id}/ingest",
         json={"raw_content": SAMPLE_MOVIE_SRT, "auto_publish": True},

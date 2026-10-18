@@ -476,6 +476,18 @@
               <!-- Quick Ingestion Form -->
               <div class="admin-ingest-box">
                 <h3>Authorized Asset Ingestion (SRT / WebVTT)</h3>
+                <label class="admin-token-label" for="admin-api-token">Admin API token</label>
+                <input
+                  class="tv-input tv-focusable admin-token-input"
+                  id="admin-api-token"
+                  type="password"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  aria-describedby="admin-token-help"
+                  tabindex="0"
+                >
+                <p class="admin-token-help" id="admin-token-help">Used only for admin requests in this page; it is not saved.</p>
                 <div class="admin-form-row">
                   <select class="tv-input tv-focusable" id="admin-movie-select" tabindex="0">
                     <option value="interstellar-epic">Interstellar (2014)</option>

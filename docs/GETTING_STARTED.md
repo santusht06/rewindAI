@@ -35,6 +35,8 @@ cp .env.example .env
 
 Edit `.env` only when needed. `GEMINI_API_KEY` switches the current model and embedding provider to Gemini. Without it, deterministic local providers are selected. `OPENAI_API_KEY` is present in configuration but there is no OpenAI provider wired into the current provider factory. Never commit real credentials. The default `SECRET_KEY` is development-only and must be replaced before any production deployment.
 
+To use admin ingestion/publication routes locally, set `ADMIN_API_TOKEN` to a unique secret of at least 32 characters. Generate one with `python -c "import secrets; print(secrets.token_urlsafe(48))"`. Admin routes fail closed if this setting is missing or too short. The shared token is a local/demo guard, not a substitute for production operator identity, role-based authorization, or a secret manager.
+
 Apply the database migrations:
 
 ```bash

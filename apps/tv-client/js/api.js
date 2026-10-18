@@ -119,12 +119,10 @@ class RewindApiClient {
   }
 
   // Admin Ingestion & Publish
-  async adminIngest(movieId, subtitleContent, autoPublish = true) {
+  async adminIngest(movieId, subtitleContent, autoPublish = true, adminToken = '') {
     return this._request(`/admin/titles/${encodeURIComponent(movieId)}/ingest`, {
       method: 'POST',
-      headers: {
-        'X-Admin-Role': 'content_manager',
-      },
+      headers: adminToken ? { 'X-Admin-Token': adminToken } : {},
       body: JSON.stringify({
         raw_content: subtitleContent,
         auto_publish: autoPublish,
@@ -132,12 +130,10 @@ class RewindApiClient {
     });
   }
 
-  async adminPublishVersion(movieId, contentVersionId) {
+  async adminPublishVersion(movieId, contentVersionId, adminToken = '') {
     return this._request(`/admin/titles/${encodeURIComponent(movieId)}/publish-version/${encodeURIComponent(contentVersionId)}`, {
       method: 'POST',
-      headers: {
-        'X-Admin-Role': 'content_manager',
-      },
+      headers: adminToken ? { 'X-Admin-Token': adminToken } : {},
     });
   }
 

@@ -13,6 +13,7 @@ import pytest_asyncio
 import sqlite3
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from pydantic import SecretStr
 
 from ops.scripts.backup_restore import (
     calculate_sha256,
@@ -21,6 +22,7 @@ from ops.scripts.backup_restore import (
     verify_sqlite_integrity,
 )
 from services.api.api.dependencies import get_db
+from services.api.config import settings
 from services.api.domain.models import AuditAction, MovieStatus, ProgressSource
 from services.api.infrastructure.repositories import (
     AuditEventRepository,
@@ -32,6 +34,8 @@ from services.api.infrastructure.tables import Base
 from services.api.main import create_app
 from services.api.rate_limiting import SlidingWindowRateLimiter, limiter
 from services.api.telemetry import telemetry
+
+TEST_ADMIN_TOKEN = "test-admin-token-for-integration-tests"
 
 
 @pytest_asyncio.fixture
@@ -56,6 +60,8 @@ async def test_db_session():
 @pytest_asyncio.fixture
 async def api_client(test_db_session: AsyncSession):
     """Async HTTP client configured with test database session."""
+    previous_admin_token = settings.admin_api_token
+    settings.admin_api_token = SecretStr(TEST_ADMIN_TOKEN)
     app = create_app()
 
     async def override_get_db():
@@ -64,8 +70,11 @@ async def api_client(test_db_session: AsyncSession):
     app.dependency_overrides[get_db] = override_get_db
 
     transport = ASGITransport(app=app, raise_app_exceptions=False)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        yield client
+    try:
+        async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+            yield client
+    finally:
+        settings.admin_api_token = previous_admin_token
 
 
 @pytest.mark.asyncio
@@ -200,7 +209,7 @@ async def test_admin_unpublish_and_rights_revocation(
     # 2. Invoke Admin Unpublish API
     unpublish_res = await api_client.post(
         f"/api/v1/admin/titles/{movie.id}/unpublish",
-        headers={"X-Admin-Token": "valid-admin-token"},
+        headers={"X-Admin-Token": TEST_ADMIN_TOKEN},
     )
     assert unpublish_res.status_code == 200
     assert unpublish_res.json()["status"] == "draft"

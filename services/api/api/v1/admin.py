@@ -6,14 +6,17 @@ Adheres to:
 - 04_API_CONTRACT.md
 """
 
+import secrets
 from typing import Any
+
 from fastapi import APIRouter, Depends, Header, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.api.dependencies import get_db
+from services.api.config import settings
 from services.api.domain.models import AuditAction, MovieStatus
-from services.api.errors import AuthorizationError, NotFoundError
+from services.api.errors import AppException, AuthenticationError, AuthorizationError, NotFoundError
 from services.api.infrastructure.repositories import (
     AuditEventRepository,
     ContentVersionRepository,
@@ -25,11 +28,24 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 def verify_admin_authorization(x_admin_token: str | None = Header(default=None)) -> str:
-    """SRS-ADM-001: Separate authorization boundary for admin operations.
-    
-    Accepts valid admin token or default dev admin context.
-    """
-    if x_admin_token and x_admin_token == "invalid-token":
+    """Require a configured high-entropy shared token for admin operations."""
+    configured_token = (
+        settings.admin_api_token.get_secret_value()
+        if settings.admin_api_token
+        else ""
+    )
+    if len(configured_token) < 32:
+        raise AppException(
+            code="ADMIN_AUTH_NOT_CONFIGURED",
+            message="Administrative access is not configured.",
+            status_code=503,
+        )
+    if not x_admin_token:
+        raise AuthenticationError("Administrative credentials are required.")
+    if not secrets.compare_digest(
+        x_admin_token.encode("utf-8"),
+        configured_token.encode("utf-8"),
+    ):
         raise AuthorizationError("Invalid administrative credentials.")
     return "admin-operator"
 

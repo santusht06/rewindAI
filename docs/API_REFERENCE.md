@@ -16,7 +16,7 @@ The generated OpenAPI schema includes 15 operations. `GET /metrics` is an additi
 - Application errors use the common envelope described below. Validation errors are HTTP 422.
 - Every request receives an `X-Request-ID` response header. A caller may send `X-Request-ID` to supply a correlation ID.
 - Session routes accept the optional `X-User-ID` header. If omitted, the service uses the fixed local identity `tv-viewer-primary`. This is not authentication; clients can choose a header value.
-- Admin routes accept the optional `X-Admin-Token` header, but current authorization is a development placeholder: missing tokens and arbitrary values are accepted; only the literal `invalid-token` is rejected. Do not expose admin routes to untrusted networks.
+- Admin routes require the configured `ADMIN_API_TOKEN` in `X-Admin-Token`. The server returns 503 `ADMIN_AUTH_NOT_CONFIGURED` when no token of at least 32 characters is configured, returns 401 when the request omits the token, and returns 403 for an incorrect token. Comparisons are constant-time. This is a shared-token boundary, not per-operator identity or role-based access control; keep admin routes on a trusted network and rotate the secret through your deployment secret manager. The TV operations panel accepts the token in a password field and keeps it only in page memory; do not use that panel on a shared or untrusted device.
 - The default question rate limit is 60 requests per minute, in process memory, keyed by `X-User-ID` or client IP. A rejection returns HTTP 429 with `details.retry_after_seconds`.
 
 ## Health and Documentation
@@ -111,7 +111,7 @@ Application and validation errors use this envelope:
 }
 ```
 
-Known application status/code pairs include 400 `BAD_REQUEST`, 401 `UNAUTHENTICATED`, 403 `FORBIDDEN`, 404 `NOT_FOUND`, 409 `STATE_CONFLICT`, 413 `PAYLOAD_TOO_LARGE`, 422 `VALIDATION_ERROR`, 429 `RATE_LIMIT_EXCEEDED`, 503 `PROVIDER_UNAVAILABLE`, and 504 `GATEWAY_TIMEOUT`. Unexpected exceptions return 500 `INTERNAL_SERVER_ERROR`. Per-operation application-error responses are not fully declared in the generated OpenAPI schema; use this section and the implementation for those cases.
+Known application status/code pairs include 400 `BAD_REQUEST`, 401 `UNAUTHENTICATED`, 403 `FORBIDDEN`, 404 `NOT_FOUND`, 409 `STATE_CONFLICT`, 413 `PAYLOAD_TOO_LARGE`, 422 `VALIDATION_ERROR`, 429 `RATE_LIMIT_EXCEEDED`, 503 `ADMIN_AUTH_NOT_CONFIGURED` or `PROVIDER_UNAVAILABLE`, and 504 `GATEWAY_TIMEOUT`. Unexpected exceptions return 500 `INTERNAL_SERVER_ERROR`. Per-operation application-error responses are not fully declared in the generated OpenAPI schema; use this section and the implementation for those cases.
 
 ## Keeping the Contract in Sync
 

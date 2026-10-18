@@ -14,9 +14,11 @@ Tests:
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from services.api.api.dependencies import get_db
+from services.api.config import settings
 from services.api.domain.models import ContentProcessingStatus, MovieStatus
 from services.api.errors import ValidationError
 from services.api.infrastructure.repositories import (
@@ -58,6 +60,8 @@ BRAND: Love is the one thing we're capable of perceiving that transcends dimensi
 Maybe we should trust that, even if we can't understand it.
 """
 
+TEST_ADMIN_TOKEN = "test-admin-token-for-integration-tests"
+
 
 @pytest_asyncio.fixture
 async def test_db_session():
@@ -76,6 +80,8 @@ async def test_db_session():
 @pytest_asyncio.fixture
 async def api_client(test_db_session: AsyncSession):
     """Async HTTP client configured with test database session."""
+    previous_admin_token = settings.admin_api_token
+    settings.admin_api_token = SecretStr(TEST_ADMIN_TOKEN)
     app = create_app()
 
     async def override_get_db():
@@ -84,8 +90,11 @@ async def api_client(test_db_session: AsyncSession):
     app.dependency_overrides[get_db] = override_get_db
 
     transport = ASGITransport(app=app, raise_app_exceptions=False)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        yield client
+    try:
+        async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+            yield client
+    finally:
+        settings.admin_api_token = previous_admin_token
 
 
 # ==========================================
@@ -254,6 +263,24 @@ async def test_ingestion_pipeline_staged_and_idempotent(test_db_session: AsyncSe
 # ==========================================
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("configured_token", [None, SecretStr("short")])
+async def test_admin_routes_fail_closed_when_token_is_unconfigured_or_short(
+    api_client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    configured_token: SecretStr | None,
+):
+    """Admin operations remain unavailable until a strong token is configured."""
+    monkeypatch.setattr(settings, "admin_api_token", configured_token)
+    response = await api_client.post(
+        "/api/v1/admin/titles/unconfigured-film/ingest",
+        json={"raw_content": SAMPLE_SRT},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["code"] == "ADMIN_AUTH_NOT_CONFIGURED"
+
+
+@pytest.mark.asyncio
 async def test_admin_ingest_and_publish_endpoints(
     api_client: AsyncClient,
     test_db_session: AsyncSession,
@@ -268,18 +295,25 @@ async def test_admin_ingest_and_publish_endpoints(
         status=MovieStatus.DRAFT,
     )
 
-    # 1. Unauthorized admin call is rejected
+    # Missing and incorrect admin credentials must both fail closed.
     unauth_res = await api_client.post(
         f"/api/v1/admin/titles/{movie.id}/ingest",
         json={"raw_content": SAMPLE_SRT},
-        headers={"X-Admin-Token": "invalid-token"},
     )
-    assert unauth_res.status_code == 403
+    assert unauth_res.status_code == 401
+
+    invalid_res = await api_client.post(
+        f"/api/v1/admin/titles/{movie.id}/ingest",
+        json={"raw_content": SAMPLE_SRT},
+        headers={"X-Admin-Token": "arbitrary-client-value"},
+    )
+    assert invalid_res.status_code == 403
 
     # 2. Ingest via admin endpoint
     ingest_res = await api_client.post(
         f"/api/v1/admin/titles/{movie.id}/ingest",
         json={"raw_content": SAMPLE_SRT, "auto_publish": False},
+        headers={"X-Admin-Token": TEST_ADMIN_TOKEN},
     )
     assert ingest_res.status_code == 201
     data = ingest_res.json()
@@ -288,7 +322,8 @@ async def test_admin_ingest_and_publish_endpoints(
 
     # 3. Publish version via admin endpoint
     pub_res = await api_client.post(
-        f"/api/v1/admin/titles/{movie.id}/publish-version/{version_id}"
+        f"/api/v1/admin/titles/{movie.id}/publish-version/{version_id}",
+        headers={"X-Admin-Token": TEST_ADMIN_TOKEN},
     )
     assert pub_res.status_code == 200
     assert pub_res.json()["status"] == "published"

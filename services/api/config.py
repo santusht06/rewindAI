@@ -4,6 +4,7 @@ Implements NFR-SEC-001 (secrets stored server-side), NFR-PRIV-001 (redaction).
 """
 
 from typing import Literal
+
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -28,6 +29,10 @@ class Settings(BaseSettings):
     secret_key: SecretStr = Field(
         default=SecretStr("dev-insecure-secret-key-32-characters-minimum"),
         description="Master secret key for server-issued nonces and session validation",
+    )
+    admin_api_token: SecretStr | None = Field(
+        default=None,
+        description="Shared secret required for local/admin API operations; must be at least 32 characters",
     )
 
     # Database

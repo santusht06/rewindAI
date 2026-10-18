@@ -52,6 +52,8 @@ async def test_tv_client_html_structure_contains_all_screens(app):
         ]
         for screen in screens:
             assert f'id="{screen}"' in html, f"Screen {screen} missing from TV client DOM"
+        assert 'id="admin-api-token"' in html
+        assert 'type="password"' in html
 
         # Verify Fire TV Remote Controller Simulator
         assert 'id="remote-simulator"' in html
@@ -74,3 +76,6 @@ async def test_tv_client_assets_served_correctly(app):
             js_res = await client.get(f"/tv/js/{js_file}")
             assert js_res.status_code == 200, f"Failed to load {js_file}"
             assert len(js_res.text) > 100
+            if js_file == "api.js":
+                assert "X-Admin-Token" in js_res.text
+                assert "X-Admin-Role" not in js_res.text

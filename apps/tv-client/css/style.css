@@ -1263,6 +1263,27 @@ body.tv-viewport {
   margin-bottom: 14px;
 }
 
+.admin-token-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-token-input {
+  display: block;
+  margin-bottom: 6px;
+  padding: 14px 20px;
+  border-radius: 8px;
+}
+
+.admin-token-help {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .admin-form-row {
   display: flex;
   gap: 16px;

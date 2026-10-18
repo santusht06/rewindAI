@@ -535,11 +535,12 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       const log = document.getElementById('admin-log-output');
       const movieSelect = document.getElementById('admin-movie-select');
       const movieId = movieSelect?.value || 'interstellar-epic';
+      const adminToken = this.getAdminToken();
 
       log.textContent = `Starting ingestion for title ${movieId}...\nValidating subtitle checksum & timestamps...`;
 
       try {
-        const res = await window.RewindApi.adminIngest(movieId, this.sampleSrt, true);
+        const res = await window.RewindApi.adminIngest(movieId, this.sampleSrt, true, adminToken);
         log.textContent = `[SUCCESS] Ingested Content Version: ${res.content_version_id}\n` +
                           `Status: ${res.status}\n` +
                           `Chunks Created: ${res.chunks_created}\n` +
@@ -554,10 +555,14 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     });
   }
 
+  getAdminToken() {
+    return document.getElementById('admin-api-token')?.value.trim() || '';
+  }
+
   async seedSampleMovie() {
     this.showToast('Seeding Interstellar into catalog...');
     try {
-      await window.RewindApi.adminIngest('interstellar-epic', this.sampleSrt, true);
+      await window.RewindApi.adminIngest('interstellar-epic', this.sampleSrt, true, this.getAdminToken());
       this.showToast('Seeded! Reloading catalog...');
       await this.loadCatalog();
     } catch (err) {
