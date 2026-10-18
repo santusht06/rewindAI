@@ -41,13 +41,15 @@ Living project checklist for implemented features, verified changes, and remaini
 ### Setup and Release
 
 - [ ] Verify a fresh editable install using `pip install -e ".[dev]"` and record the result here.
-- [ ] Run the full test suite, lint, and type checks in the supported Python environment; resolve or document failures.
+- [ ] Keep the test suite passing and triage static-check debt: baseline `ruff check .` 130 findings and `mypy services` 117 errors across 12 files (2026-10-18); establish clean gates.
 - [ ] Complete E11 production-launch sign-off; the status dashboard currently marks E11 `NOT_STARTED`.
 - [ ] Verify deployment, migration, backup/restore, and rollback procedures in the intended beta/production environment.
+- [ ] Replace the fallback viewer identity and development admin check with production-grade authentication/authorization; test unauthorized access paths.
+- [ ] Make readiness probes verify required dependencies such as database connectivity.
 
 ### Product and Platform Decisions
 
-- [ ] Select and configure the production LLM and embedding providers; validate real-provider behavior, timeouts, and failure handling.
+- [ ] Select and configure the production LLM and embedding providers; Gemini is wired, while the configured OpenAI key is not currently connected to a provider implementation.
 - [ ] Confirm content licensing and rights for every title/transcript used beyond authorized demo fixtures.
 - [ ] Run load testing and verify the documented Q&A latency targets (p50 < 1.5s, p95 < 3.0s).
 - [ ] Verify packaging, navigation, backend reachability, and lifecycle behavior on the selected Fire OS/Vega OS device or emulator; label physical-device testing separately.
@@ -70,3 +72,5 @@ Living project checklist for implemented features, verified changes, and remaini
 | Date | Change | Verification |
 |---|---|---|
 | 2026-10-18 | Added explicit setuptools build backend and restricted package discovery to `services`; updated README install/run instructions; created this checklist. | `pip install -e '.[dev]'` succeeded; `pytest -q` passed (55 tests); Uvicorn started and `/health/live` returned `status: alive`. |
+| 2026-10-18 | Expanded README, added local setup/API guide, documented identity/admin/readiness limitations, and clarified beta/production and platform/spoiler evidence. | Documentation review and `git diff --check`; setup and migration commands were verified in the local environment. |
+| 2026-10-18 | Recorded the current lint and type-check baseline as open engineering work. | `ruff check .`: 130 findings; `mypy services`: 117 errors across 12 files. |

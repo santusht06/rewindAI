@@ -45,7 +45,7 @@ This document logs significant architectural and implementation decisions, their
   2. *Client-side filtering / UI hiding:* Untrusted client can be bypassed by inspecting network payloads or tampering with requests.
   3. *Deterministic Pre-Retrieval Server-Side Filtering:* The retrieval query includes an absolute timestamp ceiling (`end_time_seconds <= current_position_seconds + margin`). Future subtitle chunks are never retrieved from the database, meaning they never enter the LLM prompt context.
 - **Decision:** Implement **Pre-Retrieval Server-Side Boundary Filtering** as the primary defense. Post-generation schema validation and citation verification act as secondary defense in depth. Full spoiler mode requires an explicit server-generated, single-use confirmation token.
-- **Consequences:** Mathematically impossible for the LLM to reveal future dialogue or transcript details because the evidence does not exist in its prompt context.
+- **Consequences:** In safe mode, future subtitle chunks excluded by the server-side retrieval boundary are not available as evidence to the model. This is a strong defense for indexed transcript evidence, not a guarantee against every possible spoiler source, implementation defect, or information disclosed elsewhere in the product.
 
 ---
 
@@ -78,7 +78,11 @@ This document logs significant architectural and implementation decisions, their
   - For **Vega OS:** Packaged as a standard W3C Web App with `manifest.json` configured for TV landscape fullscreen execution.
   - For **Fire OS:** Packaged with `amazon-webapp-config.json` for immediate testing on Amazon Web App Tester and Amazon Hosted Web Apps.
   - For **Evaluation / Demo Rehearsal:** Delivered directly from FastAPI at `/tv/` with an interactive on-screen Fire TV Remote simulator overlay.
-- **Consequences:** Eliminates OS fragmentation risk; guarantees single-codebase portability across all current Fire OS devices and upcoming Vega OS hardware.
+- **Consequences:** A shared web client and target-specific packaging reduce duplicated UI work. Manifests and desktop/browser tests do not establish compatibility with every Fire OS/Vega OS version or device. Verify launch, focus/remote behavior, lifecycle, networking, and packaging on the selected target and record the exact environment.
+
+### Platform Validation Caveat
+
+The ADR records the intended dual-target design, not certification or verified physical-device compatibility. Platform compatibility remains open until supported target environments and test evidence are recorded in the implementation tracker.
 
 ---
 
