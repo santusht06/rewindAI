@@ -638,6 +638,204 @@
         }
       }
     },
+    "/api/v1/sessions/{session_id}/subtitle-lines": {
+      "get": {
+        "tags": [
+          "story companion"
+        ],
+        "summary": "Search Subtitle Lines",
+        "description": "Search only indexed subtitle passages permitted by the active spoiler boundary.",
+        "operationId": "search_subtitle_lines_api_v1_sessions__session_id__subtitle_lines_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 120,
+              "title": "Query"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubtitleLineSearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/translations": {
+      "post": {
+        "tags": [
+          "story companion"
+        ],
+        "summary": "Translate Subtitle Line",
+        "description": "Translate one selected indexed subtitle passage with a verified timestamp citation.",
+        "operationId": "translate_subtitle_line_api_v1_sessions__session_id__translations_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/characters": {
+      "get": {
+        "tags": [
+          "story companion"
+        ],
+        "summary": "Get Character Cards",
+        "description": "Return curated character facts revealed no later than the session's allowed boundary.",
+        "operationId": "get_character_cards_api_v1_sessions__session_id__characters_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterCardsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/titles/{title_id}/ingest": {
       "post": {
         "tags": [
@@ -837,10 +1035,186 @@
           }
         }
       }
+    },
+    "/api/v1/admin/titles/{title_id}/character-facts": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Create Character Fact",
+        "description": "Attach a curated character fact and its first-reveal timestamp to the active index.",
+        "operationId": "create_character_fact_api_v1_admin_titles__title_id__character_facts_post",
+        "parameters": [
+          {
+            "name": "title_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Title Id"
+            }
+          },
+          {
+            "name": "x-admin-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CharacterFactCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharacterFactResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "CharacterCardSchema": {
+        "properties": {
+          "character_name": {
+            "type": "string",
+            "title": "Character Name"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/CharacterFactResponse"
+            },
+            "type": "array",
+            "title": "Facts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "character_name",
+          "facts"
+        ],
+        "title": "CharacterCardSchema"
+      },
+      "CharacterCardsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CharacterCardSchema"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "CharacterCardsResponse"
+      },
+      "CharacterFactCreateRequest": {
+        "properties": {
+          "character_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Character Name"
+          },
+          "fact": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Fact"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 240
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship"
+          },
+          "first_known_at_seconds": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "First Known At Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "character_name",
+          "fact",
+          "first_known_at_seconds"
+        ],
+        "title": "CharacterFactCreateRequest",
+        "description": "Curated, authorized character information with a first-reveal boundary."
+      },
+      "CharacterFactResponse": {
+        "properties": {
+          "fact": {
+            "type": "string",
+            "title": "Fact"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship"
+          },
+          "first_known_at_seconds": {
+            "type": "integer",
+            "title": "First Known At Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fact",
+          "first_known_at_seconds"
+        ],
+        "title": "CharacterFactResponse"
+      },
       "CitationSchema": {
         "properties": {
           "chunk_id": {
@@ -1285,6 +1659,51 @@
         ],
         "title": "SpoilerMode"
       },
+      "SubtitleLineSchema": {
+        "properties": {
+          "cue_id": {
+            "type": "string",
+            "title": "Cue Id"
+          },
+          "start_time_seconds": {
+            "type": "integer",
+            "title": "Start Time Seconds"
+          },
+          "end_time_seconds": {
+            "type": "integer",
+            "title": "End Time Seconds"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cue_id",
+          "start_time_seconds",
+          "end_time_seconds",
+          "text"
+        ],
+        "title": "SubtitleLineSchema",
+        "description": "A subtitle passage available within the viewer's server-enforced story boundary."
+      },
+      "SubtitleLineSearchResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SubtitleLineSchema"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "SubtitleLineSearchResponse"
+      },
       "TitleDetailResponse": {
         "properties": {
           "id": {
@@ -1450,6 +1869,131 @@
         ],
         "title": "TitleSummarySchema",
         "description": "Compact summary of a movie title."
+      },
+      "TranslationCitationSchema": {
+        "properties": {
+          "cue_id": {
+            "type": "string",
+            "title": "Cue Id"
+          },
+          "start_time_seconds": {
+            "type": "integer",
+            "title": "Start Time Seconds"
+          },
+          "end_time_seconds": {
+            "type": "integer",
+            "title": "End Time Seconds"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cue_id",
+          "start_time_seconds",
+          "end_time_seconds",
+          "text"
+        ],
+        "title": "TranslationCitationSchema"
+      },
+      "TranslationRequest": {
+        "properties": {
+          "cue_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Cue Id"
+          },
+          "target_locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "es",
+              "fr",
+              "hi",
+              "ja"
+            ],
+            "title": "Target Locale"
+          },
+          "explain_context": {
+            "type": "boolean",
+            "title": "Explain Context",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "cue_id",
+          "target_locale"
+        ],
+        "title": "TranslationRequest",
+        "description": "Select an indexed subtitle passage and request a bounded translation."
+      },
+      "TranslationResponse": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "translated",
+              "insufficient_evidence"
+            ],
+            "title": "Outcome"
+          },
+          "original_text": {
+            "type": "string",
+            "title": "Original Text"
+          },
+          "target_locale": {
+            "type": "string",
+            "title": "Target Locale"
+          },
+          "translation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Translation"
+          },
+          "contextual_explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contextual Explanation"
+          },
+          "citation": {
+            "$ref": "#/components/schemas/TranslationCitationSchema"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome",
+          "original_text",
+          "target_locale",
+          "citation"
+        ],
+        "title": "TranslationResponse"
       },
       "UpdateProgressRequest": {
         "properties": {

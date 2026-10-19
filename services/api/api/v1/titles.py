@@ -86,5 +86,5 @@ async def get_title(
         duration_seconds=movie.duration_seconds,
         status=movie.status,
         questions_available=questions_available,
-        supported_locales=["en"],
+        supported_locales=["en", "es", "fr", "hi", "ja"],
     )

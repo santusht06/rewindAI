@@ -7,13 +7,14 @@ Adheres to:
 """
 
 import secrets
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.api.dependencies import get_db
+from services.api.api.schemas import CharacterFactCreateRequest, CharacterFactResponse
 from services.api.config import settings
 from services.api.domain.models import AuditAction, MovieStatus
 from services.api.errors import AppException, AuthenticationError, AuthorizationError, NotFoundError
@@ -21,6 +22,7 @@ from services.api.infrastructure.repositories import (
     AuditEventRepository,
     ContentVersionRepository,
     MovieRepository,
+    StoryFactRepository,
 )
 from services.api.ingestion.pipeline import IngestionPipeline
 
@@ -181,3 +183,52 @@ async def unpublish_title(
         "message": f"Title '{title_id}' unpublished successfully.",
     }
 
+
+@router.post(
+    "/titles/{title_id}/character-facts",
+    response_model=CharacterFactResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_character_fact(
+    title_id: str,
+    body: CharacterFactCreateRequest,
+    admin_actor: Annotated[str, Depends(verify_admin_authorization)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> CharacterFactResponse:
+    """Attach a curated character fact and its first-reveal timestamp to the active index."""
+    movie = await MovieRepository(db).get_by_id(title_id)
+    if not movie:
+        raise NotFoundError(f"Movie '{title_id}' not found.")
+    version = await ContentVersionRepository(db).get_active_version(title_id)
+    if not version:
+        raise NotFoundError("Publish an active subtitle index before adding character facts.")
+    if body.first_known_at_seconds > movie.duration_seconds:
+        raise AppException(
+            code="INVALID_REVEAL_TIME",
+            message="The fact's reveal time cannot exceed the title duration.",
+            status_code=422,
+        )
+    fact = await StoryFactRepository(db).create_character_fact(
+        content_version_id=version.id,
+        movie_id=title_id,
+        character_name=body.character_name.strip(),
+        fact=body.fact.strip(),
+        relationship=body.relationship.strip() if body.relationship else None,
+        first_known_at_seconds=body.first_known_at_seconds,
+    )
+    await AuditEventRepository(db).record_event(
+        action=AuditAction.CHARACTER_FACT_CREATE,
+        target_type="character_fact",
+        target_id=fact.id,
+        actor=admin_actor,
+        details={
+            "movie_id": title_id,
+            "content_version_id": version.id,
+            "first_known_at_seconds": fact.first_known_at_seconds,
+        },
+    )
+    return CharacterFactResponse(
+        fact=fact.fact,
+        relationship=fact.relationship_description,
+        first_known_at_seconds=int(fact.first_known_at_seconds),
+    )

@@ -6,10 +6,11 @@ Adheres strictly to:
 - 04_content_ingestion_pipeline.mmd
 """
 
-from dataclasses import dataclass
 import hashlib
 import time
+from dataclasses import dataclass
 from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,6 +25,7 @@ from services.api.infrastructure.repositories import (
     ContentVersionRepository,
     MovieRepository,
     SubtitleChunkRepository,
+    SubtitleCueRepository,
 )
 from services.api.infrastructure.tables import ContentVersionTable
 from services.api.ingestion.chunker import chunk_subtitle_cues
@@ -133,6 +135,11 @@ class IngestionPipeline:
             c_dict["embedding"] = embeddings[i] if i < len(embeddings) else None
 
         await self.chunk_repo.bulk_create(chunk_dicts)
+        await SubtitleCueRepository(self.session).bulk_create(
+            content_version_id=version.id,
+            movie_id=movie_id,
+            cues=cues,
+        )
 
         # 9. Mark version completed
         version.processing_status = ContentProcessingStatus.COMPLETED.value

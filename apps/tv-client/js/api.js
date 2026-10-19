@@ -118,6 +118,27 @@ class RewindApiClient {
     });
   }
 
+  async searchSubtitleLines(sessionId, query) {
+    return this._request(
+      `/sessions/${encodeURIComponent(sessionId)}/subtitle-lines?query=${encodeURIComponent(query)}`
+    );
+  }
+
+  async translateSubtitle(sessionId, cueId, targetLocale, explainContext = true) {
+    return this._request(`/sessions/${encodeURIComponent(sessionId)}/translations`, {
+      method: 'POST',
+      body: JSON.stringify({
+        cue_id: cueId,
+        target_locale: targetLocale,
+        explain_context: explainContext,
+      }),
+    });
+  }
+
+  async getCharacters(sessionId) {
+    return this._request(`/sessions/${encodeURIComponent(sessionId)}/characters`);
+  }
+
   // Admin Ingestion & Publish
   async adminIngest(movieId, subtitleContent, autoPublish = true, adminToken = '') {
     return this._request(`/admin/titles/${encodeURIComponent(movieId)}/ingest`, {
@@ -134,6 +155,14 @@ class RewindApiClient {
     return this._request(`/admin/titles/${encodeURIComponent(movieId)}/publish-version/${encodeURIComponent(contentVersionId)}`, {
       method: 'POST',
       headers: adminToken ? { 'X-Admin-Token': adminToken } : {},
+    });
+  }
+
+  async adminCreateCharacterFact(movieId, fact, adminToken = '') {
+    return this._request(`/admin/titles/${encodeURIComponent(movieId)}/character-facts`, {
+      method: 'POST',
+      headers: adminToken ? { 'X-Admin-Token': adminToken } : {},
+      body: JSON.stringify(fact),
     });
   }
 

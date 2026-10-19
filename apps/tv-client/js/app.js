@@ -330,6 +330,16 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       }
     });
 
+    document.getElementById('btn-search-subtitle-line')?.addEventListener('click', () => {
+      this.searchSubtitleLines();
+    });
+    document.getElementById('subtitle-line-query')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') this.searchSubtitleLines();
+    });
+    document.getElementById('btn-load-characters')?.addEventListener('click', () => {
+      this.loadCharacterCards();
+    });
+
     // Adjust time button
     document.getElementById('comp-btn-adjust-time')?.addEventListener('click', () => {
       this.showScreen('s3-details');
@@ -387,6 +397,96 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     }
   }
 
+  async searchSubtitleLines() {
+    if (!this.currentSession) return;
+    const query = document.getElementById('subtitle-line-query')?.value?.trim();
+    const results = document.getElementById('subtitle-line-results');
+    if (!query || query.length < 2) {
+      this.showToast('Enter at least two words or characters from the subtitle.');
+      return;
+    }
+    results.textContent = 'Searching available subtitle passages…';
+    try {
+      const response = await window.RewindApi.searchSubtitleLines(
+        this.currentSession.session_id,
+        query
+      );
+      results.replaceChildren();
+      if (!response.items?.length) {
+        results.textContent = 'No matching subtitle is available within this spoiler boundary.';
+        return;
+      }
+      response.items.forEach(line => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'subtitle-result tv-focusable';
+        button.tabIndex = 0;
+        button.textContent = `${this.formatTime(line.start_time_seconds)} · ${line.text}`;
+        button.addEventListener('click', () => this.translateSubtitle(line));
+        results.appendChild(button);
+      });
+    } catch (err) {
+      results.textContent = `Could not search subtitles: ${err.message}`;
+    }
+  }
+
+  async translateSubtitle(line) {
+    const targetLocale = document.getElementById('translation-target-locale')?.value || 'hi';
+    const explainContext = document.getElementById('translation-explain-context')?.checked ?? true;
+    try {
+      const response = await window.RewindApi.translateSubtitle(
+        this.currentSession.session_id,
+        line.cue_id,
+        targetLocale,
+        explainContext
+      );
+      if (response.outcome !== 'translated') {
+        this.showToast(response.message || 'Translation abstained: the line could not be translated reliably.');
+        return;
+      }
+      this.renderTranslation(response);
+      this.showScreen('s5-answer');
+    } catch (err) {
+      this.showToast(`Translation failed: ${err.message}`);
+    }
+  }
+
+  async loadCharacterCards() {
+    if (!this.currentSession) return;
+    const container = document.getElementById('character-card-results');
+    container.textContent = 'Loading character details…';
+    try {
+      const response = await window.RewindApi.getCharacters(this.currentSession.session_id);
+      container.replaceChildren();
+      if (!response.items?.length) {
+        container.textContent = 'No curated character facts are available up to this point.';
+        return;
+      }
+      response.items.forEach(character => {
+        const card = document.createElement('article');
+        card.className = 'character-card tv-focusable';
+        card.tabIndex = 0;
+        const heading = document.createElement('h4');
+        heading.textContent = character.character_name;
+        card.appendChild(heading);
+        character.facts.forEach(fact => {
+          const text = document.createElement('p');
+          text.textContent = fact.relationship
+            ? `${fact.fact} ${fact.relationship}`
+            : fact.fact;
+          card.appendChild(text);
+          const reveal = document.createElement('span');
+          reveal.className = 'character-reveal-time';
+          reveal.textContent = `Known by ${this.formatTime(fact.first_known_at_seconds)}`;
+          card.appendChild(reveal);
+        });
+        container.appendChild(card);
+      });
+    } catch (err) {
+      container.textContent = `Could not load character details: ${err.message}`;
+    }
+  }
+
   handleQuestionOutcome(response) {
     const outcome = response?.outcome;
 
@@ -422,6 +522,9 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
   }
 
   renderAnswer(response) {
+    document.getElementById('translation-answer')?.classList.add('hidden');
+    document.getElementById('ans-body-text')?.classList.remove('hidden');
+    document.getElementById('answer-badge-label').textContent = 'GROUNDED IN DIALOGUE';
     document.getElementById('ans-query-display').textContent = `"${this.lastSubmittedQuestion}"`;
     document.getElementById('ans-body-text').textContent = response.answer;
     document.getElementById('ans-playback-tag').textContent = `Scene up to ${this.formatTime(this.currentSession?.current_position_seconds || 50)}`;
@@ -429,7 +532,7 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     const container = document.getElementById('ans-citations-container');
     container.innerHTML = '';
 
-    const citations = response.citations || [];
+    const citations = response.citations || (response.citation ? [response.citation] : []);
     if (citations.length === 0) {
       container.innerHTML = `<span style="color: var(--text-muted); font-size: 13px;">No direct citations referenced.</span>`;
       return;
@@ -444,6 +547,40 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       `;
       container.appendChild(card);
     });
+  }
+
+  renderTranslation(response) {
+    const translation = document.getElementById('translation-answer');
+    document.getElementById('ans-body-text').classList.add('hidden');
+    translation.classList.remove('hidden');
+    document.getElementById('answer-badge-label').textContent = 'TRANSLATED FROM AUTHORIZED SUBTITLE';
+    document.getElementById('ans-query-display').textContent =
+      `Translation to ${response.target_locale.toUpperCase()}`;
+    document.getElementById('ans-playback-tag').textContent =
+      `Scene ${this.formatTime(response.citation.start_time_seconds)}`;
+    document.getElementById('translation-original').textContent = response.original_text;
+    document.getElementById('translation-translated').textContent = response.translation;
+    const explanation = document.getElementById('translation-explanation-wrap');
+    if (response.contextual_explanation) {
+      explanation.classList.remove('hidden');
+      document.getElementById('translation-explanation').textContent = response.contextual_explanation;
+    } else {
+      explanation.classList.add('hidden');
+      document.getElementById('translation-explanation').textContent = '';
+    }
+    const container = document.getElementById('ans-citations-container');
+    container.replaceChildren();
+    const citation = document.createElement('div');
+    citation.className = 'citation-card';
+    const time = document.createElement('span');
+    time.className = 'citation-time-badge';
+    time.textContent =
+      `${this.formatTime(response.citation.start_time_seconds)} - ${this.formatTime(response.citation.end_time_seconds)}`;
+    const quote = document.createElement('p');
+    quote.className = 'citation-quote';
+    quote.textContent = response.citation.text;
+    citation.append(time, quote);
+    container.appendChild(citation);
   }
 
   /* -------------------------------------------------------------

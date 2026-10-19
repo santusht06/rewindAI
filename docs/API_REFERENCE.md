@@ -7,7 +7,7 @@ python ops/scripts/export_openapi.py
 python ops/scripts/export_openapi.py --check
 ```
 
-The generated OpenAPI schema includes 15 operations. `GET /metrics` is an additional hidden alias and is not included in that schema. The root path redirects to `/tv/`; `/tv/` serves the TV client, not an API resource.
+The generated OpenAPI schema includes 19 operations. `GET /metrics` is an additional hidden alias and is not included in that schema. The root path redirects to `/tv/`; `/tv/` serves the TV client, not an API resource.
 
 ## Conventions and Access
 
@@ -41,6 +41,7 @@ The generated OpenAPI schema includes 15 operations. `GET /metrics` is an additi
 `TitleListResponse` contains `items`, `total`, and `next_cursor`. Each item contains `id`, `display_title`, optional `year`, `duration_seconds`, `availability`, `index_status`, and `has_active_index`. The current implementation returns `total` as the number of returned items, does not apply `cursor`, and always returns `next_cursor: null`; do not assume cursor pagination is implemented.
 
 `TitleDetailResponse` contains `id`, `display_title`, optional `year`, `duration_seconds`, `status`, `questions_available`, and `supported_locales`. Only published titles are returned by the detail endpoint.
+`supported_locales` lists the currently available translation targets (`en`, `es`, `fr`, `hi`, `ja`); it does not assert that every title's source subtitles use each language.
 
 ## Viewing Sessions
 
@@ -84,15 +85,42 @@ curl -X POST "http://127.0.0.1:8000/api/v1/sessions/SESSION_ID/questions" \
   -d '{"question":"Why did Cooper leave Earth?"}'
 ```
 
-## Content Administration
+## Subtitle Translation and Character Cards
 
-These routes mutate the catalog and content index. The current admin authorization helper is not secure; use only in an isolated local environment.
+These viewer routes require the session's `X-User-ID` and use the same story boundary as Q&A: safe mode is limited to the server-stored current playback position, while full-title access requires the existing single-use spoiler confirmation. There is no separate “selected point” spoiler mode because the current client only reports manually chosen progress; a user-selected boundary would currently duplicate that control and would not provide independently verified playback state.
+
+SRT/WebVTT ingestion preserves individual cues as well as the existing larger retrieval chunks. Translation accepts only a cue ID from the active authorized index; it never accepts arbitrary viewer-provided dialogue.
 
 | Method and path | Parameters / body | Success | Common errors |
 |---|---|---:|---|
-| `POST /api/v1/admin/titles/{title_id}/ingest` | Path: `title_id`; optional `X-Admin-Token`; `IngestionRequest` | 201 `IngestionResponse` | 404, 413, 422 |
-| `POST /api/v1/admin/titles/{title_id}/publish-version/{version_id}` | Path: `title_id`, `version_id`; optional `X-Admin-Token`; no body | 200 JSON object | 404, 422 |
-| `POST /api/v1/admin/titles/{title_id}/unpublish` | Path: `title_id`; optional `X-Admin-Token`; no body | 200 JSON object | 404, 422 |
+| `GET /api/v1/sessions/{session_id}/subtitle-lines` | Path: `session_id`; query: `query` (2-120 characters); optional `X-User-ID` | 200 `SubtitleLineSearchResponse` | 403, 404, 422 |
+| `POST /api/v1/sessions/{session_id}/translations` | Path: `session_id`; optional `X-User-ID`; `TranslationRequest` | 200 `TranslationResponse` | 403, 404, 422, 503, 504 |
+| `GET /api/v1/sessions/{session_id}/characters` | Path: `session_id`; optional `X-User-ID` | 200 `CharacterCardsResponse` | 403, 404, 422 |
+| `POST /api/v1/admin/titles/{title_id}/character-facts` | Path: `title_id`; `X-Admin-Token`; `CharacterFactCreateRequest` | 201 `CharacterFactResponse` | 401, 403, 404, 422, 503 |
+
+`SubtitleLineSearchResponse.items` contains cue IDs, start/end timestamps, and cue text from the active index, already filtered by the spoiler boundary. `TranslationRequest` requires `cue_id` and `target_locale` (`en`, `es`, `fr`, `hi`, or `ja`); `explain_context` defaults to `true`. The response contains the original cue, translation when available, optional contextual explanation, and a timestamped cue citation. If the provider cannot translate reliably, the endpoint returns `outcome: insufficient_evidence`, no translation, and an explanatory message. The local deterministic mock supports identity translation when source and target locales match and explicitly abstains otherwise; configure the server-side Gemini provider for model translation.
+
+`CharacterCardsResponse.items` contains only verified, curated facts whose first-known timestamp is at or before the active spoiler boundary. Cards are grouped by character name and include optional relationship text. Facts are entered by an authorized operator against the currently active subtitle version; publishing a replacement index does not carry old-version facts forward automatically. For film titles, the reveal boundary is a timestamp; episode-aware bounds are not implemented.
+
+Example operator request for a curated character fact:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/admin/titles/TITLE_ID/character-facts" \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Token: $ADMIN_API_TOKEN" \
+  -d '{"character_name":"Cooper","fact":"Cooper is Murph’s father.","relationship":"Father of Murph.","first_known_at_seconds":20}'
+```
+
+## Content Administration
+
+These routes mutate the catalog, content index, and curated metadata. Admin requests require the configured shared token. This does not provide individual operator identity or role-based access control; protect the token and keep admin routes on a trusted network.
+
+| Method and path | Parameters / body | Success | Common errors |
+|---|---|---:|---|
+| `POST /api/v1/admin/titles/{title_id}/ingest` | Path: `title_id`; required `X-Admin-Token`; `IngestionRequest` | 201 `IngestionResponse` | 401, 403, 404, 413, 422, 503 |
+| `POST /api/v1/admin/titles/{title_id}/publish-version/{version_id}` | Path: `title_id`, `version_id`; required `X-Admin-Token`; no body | 200 JSON object | 401, 403, 404, 422, 503 |
+| `POST /api/v1/admin/titles/{title_id}/unpublish` | Path: `title_id`; required `X-Admin-Token`; no body | 200 JSON object | 401, 403, 404, 422, 503 |
+| `POST /api/v1/admin/titles/{title_id}/character-facts` | Path: `title_id`; `X-Admin-Token`; `CharacterFactCreateRequest` | 201 `CharacterFactResponse` | 401, 403, 404, 422, 503 |
 
 `IngestionRequest` requires `raw_content` (at least 10 characters); it optionally accepts `source_type` (default `srt`) and `auto_publish` (default `false`). The supported parser formats are SRT and WebVTT. Only ingest content you are authorized to process and store.
 

@@ -3,8 +3,9 @@
 Implements 03_DOMAIN_MODEL_AND_DATABASE, 09_database_erd.mmd, and NFR-SEC-002.
 """
 
-from datetime import datetime, timezone
 import uuid
+from datetime import datetime, timezone
+
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -84,6 +85,9 @@ class ContentVersionTable(Base):
     movie = relationship("MovieTable", back_populates="content_versions")
     chunks = relationship("SubtitleChunkTable", back_populates="content_version", cascade="all, delete-orphan")
     facts = relationship("StoryFactTable", back_populates="content_version", cascade="all, delete-orphan")
+    subtitle_cues = relationship(
+        "SubtitleCueTable", back_populates="content_version", cascade="all, delete-orphan"
+    )
 
 
 class SubtitleChunkTable(Base):
@@ -116,6 +120,31 @@ class SubtitleChunkTable(Base):
     content_version = relationship("ContentVersionTable", back_populates="chunks")
 
 
+class SubtitleCueTable(Base):
+    """An individual authorized subtitle cue retained for line-level selection."""
+
+    __tablename__ = "subtitle_cues"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    content_version_id = Column(
+        String(36), ForeignKey("content_versions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    movie_id = Column(String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True)
+    ordinal = Column(Integer, nullable=False)
+    start_time_seconds = Column(Float, nullable=False, index=True)
+    end_time_seconds = Column(Float, nullable=False, index=True)
+    text = Column(Text, nullable=False)
+    speaker = Column(String(100), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("content_version_id", "ordinal", name="uq_version_cue_ordinal"),
+        CheckConstraint("start_time_seconds >= 0", name="chk_cue_start_non_negative"),
+        CheckConstraint("end_time_seconds >= start_time_seconds", name="chk_cue_end_after_start"),
+    )
+
+    content_version = relationship("ContentVersionTable", back_populates="subtitle_cues")
+
+
 class StoryFactTable(Base):
     """Canon plot fact with first reveal boundary timestamp."""
 
@@ -126,7 +155,9 @@ class StoryFactTable(Base):
         String(36), ForeignKey("content_versions.id", ondelete="CASCADE"), nullable=False, index=True
     )
     movie_id = Column(String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True)
+    character_name = Column(String(120), nullable=True, index=True)
     fact = Column(Text, nullable=False)
+    relationship_description = Column("relationship", String(240), nullable=True)
     first_known_at_seconds = Column(Float, nullable=False, index=True)
     validation_status = Column(String(20), nullable=False, default="verified")
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)

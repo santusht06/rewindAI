@@ -7,6 +7,7 @@
 - `docs/development/REQUIREMENTS_TRACEABILITY.md`
 
 > **Status note (2026-10-18):** This tracker marks E11 Production Launch `NOT_STARTED`. The separate release-readiness report is dated 2026-10-17 and records a controlled-beta assessment; it is not production-launch approval. Authentication, target-device evidence, load testing, and deployment sign-off remain release considerations. The current local test run recorded in `checklist.md` passed 55 tests; rerun checks before each release decision.
+> **Status note (2026-10-19):** The local regression suite passed 62 tests after adding authorized subtitle-cue translation and spoiler-bounded curated character cards. Production-launch constraints above remain unchanged.
 
 ---
 
@@ -173,7 +174,7 @@
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
 | `REL-001` | Invariant & compliance checklist sign-off | P1 | E10 | `VERIFIED` | Pre-retrieval filtering, nonce TTL, audit trail | `868e23c` |
-| `REL-002` | Automated test regression gate (100% pass) | P0 | E10 | `VERIFIED` | **55 automated tests passing** across 11 test suites | Pending |
+| `REL-002` | Automated test regression gate (100% pass) | P0 | E10 | `VERIFIED` | **62 automated tests passing**; current run recorded in `checklist.md` | Pending |
 | `REL-003` | Disaster recovery restore test verification | P1 | OPS-005 | `VERIFIED` | Automated backup/restore test in `test_operational_readiness.py` | `868e23c` |
 | `REL-004` | Release readiness documentation update | P1 | E11 | `VERIFIED` | `docs/development/16_RELEASE_READINESS_REPORT.md` | `868e23c` |
 
@@ -204,6 +205,5 @@
 **Authorization Event:** Explicit user authorization granted on 2026-10-18 (`push to git`).  
 **Current State:** Branch `main` successfully pushed to `origin/main` (`https://github.com/santusht06/rewindAI.git`).  
 **Remote Sync Status:** **SYNCHRONIZED & UP TO DATE**.
-
 
 

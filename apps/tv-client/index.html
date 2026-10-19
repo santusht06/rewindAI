@@ -247,6 +247,9 @@
                   <button class="preset-pill tv-focusable" data-q="What happened just before this scene?" tabindex="0">
                     What happened just before this scene?
                   </button>
+                  <button class="preset-pill tv-focusable" data-q="Explain the current story context simply using only what has happened so far." tabindex="0">
+                    Explain simply
+                  </button>
                   <button class="preset-pill tv-focusable" data-q="Who is Murf's ghost?" tabindex="0">
                     Who is Murf's ghost? (Future Spoiler Test)
                   </button>
@@ -264,6 +267,43 @@
                   <span>Ask Rewind</span>
                   <span class="btn-icon-circle">↵</span>
                 </button>
+              </div>
+
+              <div class="companion-tools">
+                <section class="companion-tool-section">
+                  <h3>Translate a subtitle</h3>
+                  <p>Search indexed dialogue already available at your current spoiler boundary.</p>
+                  <div class="translation-search-row">
+                    <label class="visually-hidden" for="subtitle-line-query">Words from the subtitle</label>
+                    <input class="tv-input tv-focusable" id="subtitle-line-query" type="text"
+                      maxlength="120" placeholder="Type words from the line..." tabindex="0">
+                    <label class="visually-hidden" for="translation-target-locale">Translate into</label>
+                    <select class="tv-input tv-focusable" id="translation-target-locale" tabindex="0">
+                      <option value="hi">Hindi</option>
+                      <option value="en">English</option>
+                      <option value="es">Spanish</option>
+                      <option value="fr">French</option>
+                      <option value="ja">Japanese</option>
+                    </select>
+                    <label class="translation-context-option">
+                      <input class="tv-focusable" id="translation-explain-context" type="checkbox" checked tabindex="0">
+                      Explain idiom or tone
+                    </label>
+                    <button class="mini-btn tv-focusable" id="btn-search-subtitle-line" tabindex="0">Find line</button>
+                  </div>
+                  <div class="companion-result-list" id="subtitle-line-results" aria-live="polite"></div>
+                </section>
+
+                <section class="companion-tool-section">
+                  <div class="character-section-heading">
+                    <div>
+                      <h3>Character details</h3>
+                      <p>Curated facts appear only after their reveal point.</p>
+                    </div>
+                    <button class="mini-btn tv-focusable" id="btn-load-characters" tabindex="0">Browse characters</button>
+                  </div>
+                  <div class="character-card-list" id="character-card-results" aria-live="polite"></div>
+                </section>
               </div>
 
               <!-- Question Loading Spinner -->
@@ -287,7 +327,7 @@
               <div class="answer-header">
                 <div class="answer-badge">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>GROUNDED IN DIALOGUE</span>
+                  <span id="answer-badge-label">GROUNDED IN DIALOGUE</span>
                 </div>
                 <span class="answer-timestamp-tag" id="ans-playback-tag">Scene up to 00:00:50</span>
               </div>
@@ -300,6 +340,20 @@
               <div class="answer-body-text" id="ans-body-text">
                 Earth is dying from a blight that destroys crops. Cooper and NASA must find a habitable exoplanet to save humanity from extinction.
               </div>
+              <section class="translation-answer hidden" id="translation-answer" aria-live="polite">
+                <div>
+                  <span class="section-eyebrow">ORIGINAL SUBTITLE</span>
+                  <p id="translation-original"></p>
+                </div>
+                <div>
+                  <span class="section-eyebrow">TRANSLATION</span>
+                  <p id="translation-translated"></p>
+                </div>
+                <div id="translation-explanation-wrap" class="hidden">
+                  <span class="section-eyebrow">CONTEXT</span>
+                  <p id="translation-explanation"></p>
+                </div>
+              </section>
 
               <!-- Verified Citations / Scene Timestamps -->
               <div class="citations-section">

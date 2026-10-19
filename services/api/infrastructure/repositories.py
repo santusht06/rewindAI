@@ -3,11 +3,12 @@
 Implements BE-DATA-004, BE-DATA-005, SRS-CAT-001, SRS-SES-001..004, and 03_DOMAIN_MODEL_AND_DATABASE.
 """
 
-from datetime import datetime, timedelta, timezone
 import json
 import secrets
-from typing import Any
 import uuid
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
 from sqlalchemy import and_, delete, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,8 +30,10 @@ from services.api.infrastructure.tables import (
     QuestionTable,
     StoryFactTable,
     SubtitleChunkTable,
+    SubtitleCueTable,
     ViewingSessionTable,
 )
+from services.api.ingestion.parser import SubtitleCue
 
 
 class MovieRepository:
@@ -278,6 +281,144 @@ class SubtitleChunkRepository:
             .where(and_(*conditions))
             .order_by(SubtitleChunkTable.ordinal.asc())
             .limit(limit)
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+class SubtitleCueRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def bulk_create(
+        self,
+        content_version_id: str,
+        movie_id: str,
+        cues: list[SubtitleCue],
+    ) -> int:
+        entries = [
+            SubtitleCueTable(
+                id=str(uuid.uuid4()),
+                content_version_id=content_version_id,
+                movie_id=movie_id,
+                ordinal=ordinal,
+                start_time_seconds=cue.start_time_seconds,
+                end_time_seconds=cue.end_time_seconds,
+                text=cue.text,
+                speaker=cue.speaker,
+            )
+            for ordinal, cue in enumerate(cues)
+        ]
+        self.session.add_all(entries)
+        await self.session.flush()
+        return len(entries)
+
+    async def search_within_boundary(
+        self,
+        content_version_id: str,
+        query_text: str,
+        max_end_time_seconds: float,
+        limit: int = 20,
+    ) -> list[SubtitleCueTable]:
+        escaped_query = query_text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        stmt = (
+            select(SubtitleCueTable)
+            .where(
+                and_(
+                    SubtitleCueTable.content_version_id == content_version_id,
+                    SubtitleCueTable.end_time_seconds <= max_end_time_seconds,
+                    SubtitleCueTable.text.ilike(f"%{escaped_query}%", escape="\\"),
+                )
+            )
+            .order_by(SubtitleCueTable.ordinal.asc())
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_cue(
+        self,
+        cue_id: str,
+        content_version_id: str,
+        max_end_time_seconds: float,
+    ) -> SubtitleCueTable | None:
+        stmt = select(SubtitleCueTable).where(
+            and_(
+                SubtitleCueTable.id == cue_id,
+                SubtitleCueTable.content_version_id == content_version_id,
+                SubtitleCueTable.end_time_seconds <= max_end_time_seconds,
+            )
+        )
+        return (await self.session.execute(stmt)).scalars().first()
+
+    async def get_adjacent_cues(
+        self,
+        content_version_id: str,
+        ordinal: int,
+        max_end_time_seconds: float,
+    ) -> list[SubtitleCueTable]:
+        stmt = (
+            select(SubtitleCueTable)
+            .where(
+                and_(
+                    SubtitleCueTable.content_version_id == content_version_id,
+                    SubtitleCueTable.ordinal >= max(0, ordinal - 1),
+                    SubtitleCueTable.ordinal <= ordinal + 1,
+                    SubtitleCueTable.end_time_seconds <= max_end_time_seconds,
+                )
+            )
+            .order_by(SubtitleCueTable.ordinal.asc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+
+class StoryFactRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create_character_fact(
+        self,
+        content_version_id: str,
+        movie_id: str,
+        character_name: str,
+        fact: str,
+        first_known_at_seconds: float,
+        relationship: str | None = None,
+    ) -> StoryFactTable:
+        entry = StoryFactTable(
+            id=str(uuid.uuid4()),
+            content_version_id=content_version_id,
+            movie_id=movie_id,
+            character_name=character_name,
+            fact=fact,
+            relationship_description=relationship,
+            first_known_at_seconds=first_known_at_seconds,
+            validation_status="verified",
+        )
+        self.session.add(entry)
+        await self.session.flush()
+        return entry
+
+    async def list_character_facts(
+        self,
+        content_version_id: str,
+        max_boundary_seconds: float,
+    ) -> list[StoryFactTable]:
+        query = (
+            select(StoryFactTable)
+            .where(
+                and_(
+                    StoryFactTable.content_version_id == content_version_id,
+                    StoryFactTable.character_name.is_not(None),
+                    StoryFactTable.first_known_at_seconds <= max_boundary_seconds,
+                    StoryFactTable.validation_status == "verified",
+                )
+            )
+            .order_by(
+                StoryFactTable.character_name.asc(),
+                StoryFactTable.first_known_at_seconds.asc(),
+                StoryFactTable.id.asc(),
+            )
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -531,5 +672,3 @@ class AuditEventRepository:
         stmt = stmt.order_by(AuditEventTable.created_at.desc()).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
-
-

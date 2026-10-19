@@ -37,6 +37,14 @@ class TvRemoteNavigator {
     const key = e.key;
     const code = e.keyCode;
 
+    if (
+      document.activeElement?.tagName === 'SELECT' &&
+      (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key) ||
+        [19, 20, 21, 22].includes(code))
+    ) {
+      return;
+    }
+
     // Ignore remote arrows if user is actively typing in a text input (allow left/right cursor unless at boundary)
     if (document.activeElement && document.activeElement.tagName === 'INPUT' && (key === 'ArrowLeft' || key === 'ArrowRight')) {
       return;

@@ -6,7 +6,7 @@ The repository contains a FastAPI backend, a static 10-foot TV web client, subti
 
 ## Project Status
 
-The core prototype and demo flows are implemented, and the local automated suite has passed 55 tests. This is not production-launch approval: production identity and admin authorization, rights-cleared catalog operations, target-device validation, load testing, and deployment sign-off remain open. See the [implementation dashboard](docs/development/IMPLEMENTATION_STATUS.md) and the maintained [project checklist](checklist.md).
+The core prototype and demo flows are implemented, and the local automated suite passed 62 tests on 2026-10-19. This is not production-launch approval: production identity and admin authorization, rights-cleared catalog operations, target-device validation, load testing, and deployment sign-off remain open. See the [implementation dashboard](docs/development/IMPLEMENTATION_STATUS.md) and the maintained [project checklist](checklist.md).
 
 ## Quick Start
 
@@ -36,6 +36,8 @@ The default local database is SQLite. Without `GEMINI_API_KEY`, the app uses det
 - Browse published titles and create a viewing session with manual playback progress.
 - Ingest SRT and WebVTT assets, split them into timestamped chunks, and publish an indexed content version.
 - Ask title-scoped questions and receive evidence-grounded responses with scene citations or a safe abstention.
+- Search authorized indexed subtitle cues for contextual translation, with source timestamps and spoiler-bounded context.
+- Browse operator-curated character and relationship facts filtered by the session's reveal-time boundary.
 - Enforce safe-mode retrieval boundaries before evidence reaches the model; require a server-issued, single-use confirmation for full-spoiler mode.
 - Operate the client with a remote-friendly spatial D-pad navigation model.
 - Monitor basic service metrics, rate-limit question requests, revoke published content, and back up/restore SQLite data.

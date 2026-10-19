@@ -54,6 +54,12 @@ async def test_tv_client_html_structure_contains_all_screens(app):
             assert f'id="{screen}"' in html, f"Screen {screen} missing from TV client DOM"
         assert 'id="admin-api-token"' in html
         assert 'type="password"' in html
+        assert 'id="subtitle-line-query"' in html
+        assert 'id="translation-target-locale"' in html
+        assert 'id="btn-search-subtitle-line"' in html
+        assert 'id="btn-load-characters"' in html
+        assert "Explain simply" in html
+        assert 'id="translation-answer"' in html
 
         # Verify Fire TV Remote Controller Simulator
         assert 'id="remote-simulator"' in html
@@ -79,3 +85,11 @@ async def test_tv_client_assets_served_correctly(app):
             if js_file == "api.js":
                 assert "X-Admin-Token" in js_res.text
                 assert "X-Admin-Role" not in js_res.text
+                assert "translateSubtitle" in js_res.text
+                assert "searchSubtitleLines" in js_res.text
+                assert "getCharacters" in js_res.text
+            if js_file == "app.js":
+                assert "async searchSubtitleLines()" in js_res.text
+                assert "async loadCharacterCards()" in js_res.text
+            if js_file == "remote.js":
+                assert "document.activeElement?.tagName === 'SELECT'" in js_res.text

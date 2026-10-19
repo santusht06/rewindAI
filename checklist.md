@@ -2,7 +2,7 @@
 
 Living project checklist for implemented features, verified changes, and remaining work. The status dashboard and requirements documents remain the detailed source of truth; this file is a concise working index. Check an item only after recording current evidence.
 
-**Last reviewed:** 2026-10-18
+**Last reviewed:** 2026-10-19
 
 ## Recent Changes
 
@@ -21,6 +21,8 @@ Living project checklist for implemented features, verified changes, and remaini
 - [x] SRT/WebVTT parsing, timestamp validation, subtitle chunking, embeddings, staged indexing, and publication.
 - [x] Idempotent ingestion, title unpublishing, and content-version deactivation.
 - [x] Hybrid retrieval and grounded answers with citation validation and safe abstention.
+- [x] Search individual authorized subtitle cues and return bounded contextual translations with citations.
+- [x] Record curated character/relationship facts against an active content version and enforce reveal-time filtering.
 - [x] Server-side temporal spoiler filtering, single-use confirmation nonces, session ownership checks, and prompt-injection defenses.
 - [x] Rate limiting, privacy-aware telemetry, and SQLite backup/restore utilities.
 
@@ -73,6 +75,7 @@ Living project checklist for implemented features, verified changes, and remaini
 
 | Date | Change | Verification |
 |---|---|---|
+| 2026-10-19 | Added line-level subtitle indexing and spoiler-bounded translation, curated timestamped character facts/cards, remote-first TV actions, API contracts, and migration. | Focused tests passed; full suite: 62 passed; OpenAPI snapshot current; migration chain upgraded successfully on temporary SQLite; client JavaScript syntax, focused Ruff, and diff checks passed. |
 | 2026-10-18 | Added explicit setuptools build backend and restricted package discovery to `services`; updated README install/run instructions; created this checklist. | `pip install -e '.[dev]'` succeeded; `pytest -q` passed (55 tests); Uvicorn started and `/health/live` returned `status: alive`. |
 | 2026-10-18 | Expanded README, added local setup/API guide, documented identity/admin/readiness limitations, and clarified beta/production and platform/spoiler evidence. | Documentation review and `git diff --check`; setup and migration commands were verified in the local environment. |
 | 2026-10-18 | Recorded the current lint and type-check baseline as open engineering work. | `ruff check .`: 130 findings; `mypy services`: 117 errors across 12 files. |

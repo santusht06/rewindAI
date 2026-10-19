@@ -9,7 +9,8 @@ Adheres strictly to Rewind Complete Documentation Package:
 
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from services.api.domain.models import (
     MovieStatus,
@@ -17,7 +18,6 @@ from services.api.domain.models import (
     QuestionStatus,
     SpoilerMode,
 )
-
 
 # ==========================================
 # Titles & Catalog Schemas
@@ -170,3 +170,73 @@ class QuestionResponse(BaseModel):
     confirmation_nonce: str | None = None
     policy_state: str = "safe"
     created_at: datetime
+
+
+class SubtitleLineSchema(BaseModel):
+    """A subtitle passage available within the viewer's server-enforced story boundary."""
+
+    cue_id: str
+    start_time_seconds: int
+    end_time_seconds: int
+    text: str
+
+
+class SubtitleLineSearchResponse(BaseModel):
+    items: list[SubtitleLineSchema]
+
+
+class TranslationRequest(BaseModel):
+    """Select an indexed subtitle passage and request a bounded translation."""
+
+    cue_id: str = Field(..., min_length=1, max_length=36)
+    target_locale: Literal["en", "es", "fr", "hi", "ja"]
+    explain_context: bool = True
+
+
+class TranslationCitationSchema(BaseModel):
+    cue_id: str
+    start_time_seconds: int
+    end_time_seconds: int
+    text: str
+
+
+class TranslationResponse(BaseModel):
+    outcome: Literal["translated", "insufficient_evidence"]
+    original_text: str
+    target_locale: str
+    translation: str | None = None
+    contextual_explanation: str | None = None
+    citation: TranslationCitationSchema
+    message: str | None = None
+
+
+class CharacterFactCreateRequest(BaseModel):
+    """Curated, authorized character information with a first-reveal boundary."""
+
+    character_name: str = Field(..., min_length=1, max_length=120)
+    fact: str = Field(..., min_length=1, max_length=1000)
+    relationship: str | None = Field(default=None, max_length=240)
+    first_known_at_seconds: int = Field(..., ge=0)
+
+    @field_validator("character_name", "fact")
+    @classmethod
+    def validate_non_whitespace(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("This field cannot be blank.")
+        return normalized
+
+
+class CharacterFactResponse(BaseModel):
+    fact: str
+    relationship: str | None = None
+    first_known_at_seconds: int
+
+
+class CharacterCardSchema(BaseModel):
+    character_name: str
+    facts: list[CharacterFactResponse]
+
+
+class CharacterCardsResponse(BaseModel):
+    items: list[CharacterCardSchema]
