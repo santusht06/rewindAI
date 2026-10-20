@@ -1,5 +1,7 @@
 # Rewind
 
+![AI Maintained](https://img.shields.io/badge/readme-AI%20maintained-blue)
+
 Rewind is a TV-first story companion for supported titles. Viewers can ask questions about plot, characters, and scenes while watching. The service retrieves timestamped evidence from authorized subtitle assets, applies spoiler rules on the server, and returns cited answers or abstains when evidence is insufficient.
 
 The repository contains a FastAPI backend, a static 10-foot TV web client, subtitle ingestion and retrieval services, operational scripts, automated tests, and a detailed product/engineering requirements package.
@@ -24,14 +26,12 @@ uvicorn services.api.main:app --reload
 
 After startup:
 
-- TV client: <http://127.0.0.1:8000/tv/>
-- API documentation: <http://127.0.0.1:8000/docs>
-- Liveness: <http://127.0.0.1:8000/health/live>
-- Readiness: <http://127.0.0.1:8000/health/ready>
+- TV client: <[http://127.0.0.1:8000/tv/](http://127.0.0.1:8000/tv/)>
+- API documentation: <[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)>
+- Liveness: <[http://127.0.0.1:8000/health/live](http://127.0.0.1:8000/health/live)>
+- Readiness: <[http://127.0.0.1:8000/health/ready](http://127.0.0.1:8000/health/ready)>
 
 The default local database is SQLite. Without `GEMINI_API_KEY`, the app uses deterministic mock AI providers for local development and tests. Do not expose the development service to an untrusted network; the current viewer and admin identity checks are not production authentication.
-
-## Main Capabilities
 
 - Browse published titles and create a viewing session with manual playback progress.
 - Ingest SRT and WebVTT assets, split them into timestamped chunks, and publish an indexed content version.
