@@ -33,6 +33,8 @@ After startup:
 
 The default local database is SQLite. Without `GEMINI_API_KEY`, the app uses deterministic mock AI providers for local development and tests. Do not expose the development service to an untrusted network; the current viewer and admin identity checks are not production authentication.
 
+## Main Capabilities
+
 - Browse published titles and create a viewing session with manual playback progress.
 - Ingest SRT and WebVTT assets, split them into timestamped chunks, and publish an indexed content version.
 - Ask title-scoped questions and receive evidence-grounded responses with scene citations or a safe abstention.
