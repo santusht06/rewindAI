@@ -3,16 +3,35 @@
 Implements SRS-ADM-003 (health probes), 04_API_CONTRACT, and error envelope handling.
 """
 
-from datetime import datetime, timezone
+import asyncio
+from datetime import UTC, datetime
 from typing import Any
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from services.api.config import settings
 from services.api.errors import AppException, ErrorEnvelope
+from services.api.infrastructure.database import engine
 from services.api.logging import RequestCorrelationMiddleware, current_request_id, logger
+
+
+async def check_database_connectivity(database_engine: AsyncEngine) -> bool:
+    """Check the configured database with a bounded, read-only query."""
+    try:
+        async with asyncio.timeout(2.0):
+            async with database_engine.connect() as connection:
+                result = await connection.execute(text("SELECT 1"))
+                value = result.scalar_one()
+                return isinstance(value, int) and value == 1
+    except (SQLAlchemyError, TimeoutError) as exc:
+        logger.warning("Readiness database check failed: %s", type(exc).__name__)
+        return False
 
 
 def create_app() -> FastAPI:
@@ -78,23 +97,26 @@ def create_app() -> FastAPI:
         return {
             "status": "alive",
             "environment": settings.environment,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     # 4. Readiness Probe (Checks critical readiness invariants)
     @app.get("/health/ready", tags=["Health"], summary="System Readiness Probe")
-    async def health_ready() -> dict[str, Any]:
-        # Basic readiness checks without leaking secrets or credentials
-        is_ready = True
+    async def health_ready() -> JSONResponse:
+        persistence_ready = await check_database_connectivity(engine)
+        is_ready = persistence_ready
         components: dict[str, str] = {
             "config": "ready",
-            "persistence": "ready",
+            "persistence": "ready" if persistence_ready else "unavailable",
         }
-        return {
-            "status": "ready" if is_ready else "unready",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "components": components,
-        }
+        return JSONResponse(
+            status_code=status.HTTP_200_OK if is_ready else status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "status": "ready" if is_ready else "unready",
+                "timestamp": datetime.now(UTC).isoformat(),
+                "components": components,
+            },
+        )
 
     # 5. Metrics & Operational Telemetry Probe (OPS-001, OPS-004)
     from services.api.telemetry import telemetry
@@ -113,15 +135,16 @@ def create_app() -> FastAPI:
 
     # 7. Mount 10-ft Fire TV Web Client (S1 - S9)
     from pathlib import Path
-    from starlette.staticfiles import StaticFiles
+
     from fastapi.responses import RedirectResponse
+    from starlette.staticfiles import StaticFiles
 
     client_dir = Path(__file__).resolve().parent.parent.parent / "apps" / "tv-client"
     if client_dir.exists():
         app.mount("/tv", StaticFiles(directory=str(client_dir), html=True), name="tv-client")
 
         @app.get("/", include_in_schema=False)
-        async def root_redirect():
+        async def root_redirect() -> RedirectResponse:
             return RedirectResponse(url="/tv/")
 
     return app

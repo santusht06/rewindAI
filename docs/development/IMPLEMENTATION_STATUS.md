@@ -1,6 +1,6 @@
 # Rewind — Live Implementation Status Dashboard
 
-**Last Updated:** 2026-10-17T12:07:00Z  
+**Last Updated:** 2026-10-20
 **Governing Documents:**
 - `docs/development/14_IMPLEMENTATION_STATUS_AND_BACKEND_FIRST_EXECUTION_PLAN.md`
 - `docs/development/15_DETAILED_PRODUCT_BACKLOG_AND_IMPLEMENTATION_ORDER.md`
@@ -8,6 +8,7 @@
 
 > **Status note (2026-10-18):** This tracker marks E11 Production Launch `NOT_STARTED`. The separate release-readiness report is dated 2026-10-17 and records a controlled-beta assessment; it is not production-launch approval. Authentication, target-device evidence, load testing, and deployment sign-off remain release considerations. The current local test run recorded in `checklist.md` passed 55 tests; rerun checks before each release decision.
 > **Status note (2026-10-19):** The local regression suite passed 62 tests after adding authorized subtitle-cue translation and spoiler-bounded curated character cards. Production-launch constraints above remain unchanged.
+> **Status note (2026-10-20):** The current local suite (67 tests), Ruff, mypy, OpenAPI snapshot check, SQLite migration cycle, and SQLite backup/restore checks pass. `.github/workflows/quality.yml` is configured to run tests, Ruff, mypy, OpenAPI consistency, and migration upgrade/downgrade. Database readiness checks use a bounded live query. Production viewer/admin routes fail closed, but identity-provider/admin-role choices and target deployment details are undecided; target-environment verification is not available. E11 remains `NOT_STARTED`.
 
 ---
 
@@ -174,9 +175,12 @@
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
 |---|---|---|---|---|---|---|
 | `REL-001` | Invariant & compliance checklist sign-off | P1 | E10 | `VERIFIED` | Pre-retrieval filtering, nonce TTL, audit trail | `868e23c` |
-| `REL-002` | Automated test regression gate (100% pass) | P0 | E10 | `VERIFIED` | **62 automated tests passing**; current run recorded in `checklist.md` | Pending |
+| `REL-002` | Automated test regression gate (100% pass) | P0 | E10 | `VERIFIED` | **67 automated tests passing**; CI quality workflow configured in `.github/workflows/quality.yml` | Pending |
 | `REL-003` | Disaster recovery restore test verification | P1 | OPS-005 | `VERIFIED` | Automated backup/restore test in `test_operational_readiness.py` | `868e23c` |
 | `REL-004` | Release readiness documentation update | P1 | E11 | `VERIFIED` | `docs/development/16_RELEASE_READINESS_REPORT.md` | `868e23c` |
+| `REL-005` | Production viewer identity and operator-role authorization | P1 | Product auth decisions | `BLOCKED` | Identity provider and admin-role model undecided; production routes fail closed | Pending |
+| `REL-006` | Intended-target deployment, migration, backup/restore, and rollback rehearsal | P1 | Hosting/database decision | `BLOCKED` | No target has been selected; local SQLite checks are not production evidence | Pending |
+| `REL-007` | Target-device, load, and production smoke evidence | P1 | REL-005, REL-006 | `NOT_STARTED` | Device/emulator and production target evidence remain outstanding | Pending |
 
 ### Epic E12: Fire TV & Vega OS Platform Compatibility (16_FIRE_TV_VEGA_OS_DEMO)
 | Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
@@ -205,5 +209,3 @@
 **Authorization Event:** Explicit user authorization granted on 2026-10-18 (`push to git`).  
 **Current State:** Branch `main` successfully pushed to `origin/main` (`https://github.com/santusht06/rewindAI.git`).  
 **Remote Sync Status:** **SYNCHRONIZED & UP TO DATE**.
-
-

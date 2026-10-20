@@ -3,7 +3,9 @@
 **Date:** 2026-10-17  
 **Version:** v0.1.0-rc1  
 **Author:** Principal Software Architect, Senior Full-Stack & DevOps Engineer  
-**Status:** **READY FOR CONTROLLED BETA DEPLOYMENT**  
+**Historical status (2026-10-17):** **READY FOR CONTROLLED BETA DEPLOYMENT** — not current release approval.
+
+> **Current status (2026-10-20):** The historical controlled-beta assessment below has not been re-certified. Local tests and automated quality checks pass, and production viewer/admin routes fail closed. Identity-provider and admin-role choices, target environment, deployment rehearsal, and target-device evidence remain open. The implementation dashboard continues to mark E11 Production Launch `NOT_STARTED`.
 
 ---
 

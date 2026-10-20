@@ -7,17 +7,16 @@ Adheres strictly to:
 - AC-004, AC-007, AC-009, AC-010
 """
 
-from datetime import datetime, timezone
 import re
 import time
-from typing import Any
 import uuid
+from datetime import UTC, datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.api.api.schemas import CitationSchema, QuestionResponse
 from services.api.ai.provider import ModelProvider, get_model_provider
 from services.api.ai.retriever import SubtitleRetriever
-from services.api.telemetry import telemetry
+from services.api.api.schemas import CitationSchema, QuestionResponse
 from services.api.domain.models import (
     AuditEventAction,
     QuestionStatus,
@@ -26,7 +25,6 @@ from services.api.domain.models import (
 from services.api.errors import (
     AuthorizationError,
     NotFoundError,
-    ValidationError,
 )
 from services.api.infrastructure.repositories import (
     AuditEventRepository,
@@ -35,6 +33,7 @@ from services.api.infrastructure.repositories import (
     QuestionRepository,
     ViewingSessionRepository,
 )
+from services.api.telemetry import telemetry
 
 
 class RagOrchestrator:
@@ -64,7 +63,7 @@ class RagOrchestrator:
         """Process a question through retrieval and spoiler guardrails."""
         start_time = time.perf_counter()
         telemetry.record_request()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # 1. Fetch and validate session
         sess = await self.session_repo.get_by_id(session_id)

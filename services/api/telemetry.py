@@ -6,11 +6,11 @@ Implements:
 - NFR-PERF-001, NFR-COST-001: Observable system health without leaking user text or secrets
 """
 
-from collections import defaultdict
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
 import math
 import threading
+from collections import defaultdict
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -30,7 +30,7 @@ class TelemetrySnapshot:
 class TelemetryRegistry:
     """Thread-safe, privacy-preserving in-memory operational metrics collector."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._lock = threading.Lock()
         self._total_requests = 0
         self._outcomes: dict[str, int] = defaultdict(int)
@@ -85,7 +85,7 @@ class TelemetryRegistry:
                 p99[op] = self._calculate_percentile(vals, 99.0)
 
             return {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "total_requests": self._total_requests,
                 "outcomes": dict(self._outcomes),
                 "latencies_ms": {

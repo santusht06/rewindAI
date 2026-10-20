@@ -22,8 +22,6 @@ from services.api.api.dependencies import get_db
 from services.api.domain.models import (
     ContentProcessingStatus,
     MovieStatus,
-    ProgressSource,
-    SpoilerMode,
 )
 from services.api.infrastructure.repositories import (
     ContentVersionRepository,

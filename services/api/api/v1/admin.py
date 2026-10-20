@@ -30,7 +30,13 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 def verify_admin_authorization(x_admin_token: str | None = Header(default=None)) -> str:
-    """Require a configured high-entropy shared token for admin operations."""
+    """Require a shared token for local/demo admin operations; fail closed in production."""
+    if settings.is_production():
+        raise AppException(
+            code="ADMIN_AUTHORIZATION_NOT_CONFIGURED",
+            message="Production administrative authorization is not configured.",
+            status_code=503,
+        )
     configured_token = (
         settings.admin_api_token.get_secret_value()
         if settings.admin_api_token
@@ -81,8 +87,8 @@ class IngestionResponse(BaseModel):
 async def ingest_subtitle_asset(
     title_id: str,
     body: IngestionRequest,
-    admin_actor: str = Depends(verify_admin_authorization),
-    db: AsyncSession = Depends(get_db),
+    admin_actor: Annotated[str, Depends(verify_admin_authorization)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> IngestionResponse:
     """Ingest, validate, chunk, embed, and stage an authorized subtitle asset."""
     pipeline = IngestionPipeline(db_session=db)
@@ -112,8 +118,8 @@ async def ingest_subtitle_asset(
 async def publish_version(
     title_id: str,
     version_id: str,
-    admin_actor: str = Depends(verify_admin_authorization),
-    db: AsyncSession = Depends(get_db),
+    admin_actor: Annotated[str, Depends(verify_admin_authorization)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Atomically activate a staged content version and publish movie."""
     movie_repo = MovieRepository(db)
@@ -152,8 +158,8 @@ async def publish_version(
 @router.post("/titles/{title_id}/unpublish")
 async def unpublish_title(
     title_id: str,
-    admin_actor: str = Depends(verify_admin_authorization),
-    db: AsyncSession = Depends(get_db),
+    admin_actor: Annotated[str, Depends(verify_admin_authorization)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
     """Atomically deactivate active content versions and revoke published status (OPS-006, AC-016)."""
     movie_repo = MovieRepository(db)

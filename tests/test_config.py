@@ -3,8 +3,12 @@
 Verifies NFR-SEC-001 (secrets stored server-side), NFR-PRIV-001 (secret redaction).
 """
 
+import pytest
 from pydantic import SecretStr
-from services.api.config import Settings
+
+from services.api.api.dependencies import get_current_user_id
+from services.api.config import Settings, settings
+from services.api.errors import AppException
 
 
 def test_settings_default_values() -> None:
@@ -36,3 +40,11 @@ def test_provider_presence_helpers() -> None:
 
     cfg_gemini = Settings(gemini_api_key=SecretStr("mock-key"))
     assert cfg_gemini.has_gemini_provider()
+
+
+def test_production_viewer_identity_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "environment", "production")
+    with pytest.raises(AppException) as error:
+        get_current_user_id(x_user_id="caller-controlled-user")
+    assert error.value.status_code == 503
+    assert error.value.code == "AUTHENTICATION_NOT_CONFIGURED"

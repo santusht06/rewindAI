@@ -20,16 +20,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from services.api.api.dependencies import get_db
 from services.api.config import settings
-from services.api.domain.models import MovieStatus, ProgressSource, SpoilerMode
+from services.api.domain.models import MovieStatus
 from services.api.infrastructure.repositories import (
-    ContentVersionRepository,
     MovieRepository,
-    ViewingSessionRepository,
 )
 from services.api.infrastructure.tables import Base
-from services.api.ingestion.pipeline import IngestionPipeline
 from services.api.main import create_app
-
 
 SAMPLE_MOVIE_SRT = """1
 00:00:10,000 --> 00:00:20,000

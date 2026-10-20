@@ -4,18 +4,20 @@ Implements NFR-SEC-002 (parameterized queries, safe ORM) and 03_DOMAIN_MODEL_AND
 """
 
 from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
 from services.api.config import settings
 
-# Base class for all ORM models
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    """Base class for typed SQLAlchemy ORM models."""
 
 
 def get_engine(db_url: str | None = None) -> AsyncEngine:

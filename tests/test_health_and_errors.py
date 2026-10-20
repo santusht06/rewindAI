@@ -3,18 +3,42 @@
 Verifies SRS-ADM-003, NFR-OBS-001, 04_API_CONTRACT error semantics.
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 from fastapi import APIRouter
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.asyncio import create_async_engine
 
+from services.api import main as api_main
 from services.api.errors import (
-    AuthenticationError,
     AuthorizationError,
     ConflictError,
     NotFoundError,
     RateLimitExceededError,
 )
 from services.api.main import create_app
+
+
+@pytest.mark.asyncio
+async def test_database_connectivity_check_queries_database() -> None:
+    database_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    try:
+        assert await api_main.check_database_connectivity(database_engine) is True
+    finally:
+        await database_engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_database_connectivity_check_reports_unavailable_database() -> None:
+    connection = AsyncMock()
+    connection.__aenter__.side_effect = OperationalError("SELECT 1", {}, RuntimeError("failed"))
+    database_engine = MagicMock()
+    database_engine.connect.return_value = connection
+
+    assert await api_main.check_database_connectivity(database_engine) is False
+
 
 # Router for testing domain exceptions and errors
 dummy_router = APIRouter(prefix="/test")
@@ -66,8 +90,12 @@ async def test_health_live_endpoint(app_with_test_routes) -> None:
 
 
 @pytest.mark.asyncio
-async def test_health_ready_endpoint(app_with_test_routes) -> None:
+async def test_health_ready_endpoint(app_with_test_routes, monkeypatch) -> None:
     """Ensure /health/ready returns 200 with component statuses and no secret leaks."""
+    async def database_ready(_database_engine) -> bool:
+        return True
+
+    monkeypatch.setattr(api_main, "check_database_connectivity", database_ready)
     transport = ASGITransport(app=app_with_test_routes)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/health/ready")
@@ -80,6 +108,29 @@ async def test_health_ready_endpoint(app_with_test_routes) -> None:
         # Verify no credentials leaked in body
         assert "secret" not in response.text.lower()
         assert "password" not in response.text.lower()
+
+
+@pytest.mark.asyncio
+async def test_health_ready_fails_closed_when_database_is_unavailable(
+    app_with_test_routes, monkeypatch
+) -> None:
+    """Readiness returns 503 and does not expose database error details."""
+    async def database_unavailable(_database_engine) -> bool:
+        return False
+
+    monkeypatch.setattr(api_main, "check_database_connectivity", database_unavailable)
+    transport = ASGITransport(app=app_with_test_routes)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["status"] == "unready"
+    assert response.json()["components"] == {
+        "config": "ready",
+        "persistence": "unavailable",
+    }
+    assert "password" not in response.text.lower()
+    assert "secret" not in response.text.lower()
 
 
 @pytest.mark.asyncio

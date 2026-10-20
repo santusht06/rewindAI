@@ -7,12 +7,12 @@ Implements:
 """
 
 import argparse
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import sys
 import zipfile
+from datetime import UTC, datetime
+from pathlib import Path
 
 
 def calculate_sha256(file_path: Path) -> str:
@@ -104,7 +104,7 @@ def package_tv_app(client_dir: Path, output_dir: Path) -> tuple[Path, Path]:
 
     checksum = calculate_sha256(zip_path)
     package_metadata = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "package_name": zip_path.name,
         "sha256_checksum": checksum,
         "size_bytes": zip_path.stat().st_size,
@@ -141,7 +141,7 @@ def main() -> None:
         zip_file, manifest_file = package_tv_app(args.client_dir, args.out_dir)
         print(f"SUCCESS: Packaged TV app to {zip_file}")
         print(f"SUCCESS: Generated distribution manifest at {manifest_file}")
-    except Exception as exc:
+    except (OSError, ValueError, zipfile.BadZipFile) as exc:
         print(f"ERROR: Packaging failed: {exc}", file=sys.stderr)
         sys.exit(1)
 

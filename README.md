@@ -8,7 +8,7 @@ The repository contains a FastAPI backend, a static 10-foot TV web client, subti
 
 ## Project Status
 
-The core prototype and demo flows are implemented, and the local automated suite passed 62 tests on 2026-10-19. This is not production-launch approval: production identity and admin authorization, rights-cleared catalog operations, target-device validation, load testing, and deployment sign-off remain open. See the [implementation dashboard](docs/development/IMPLEMENTATION_STATUS.md) and the maintained [project checklist](checklist.md).
+The core prototype and demo flows are implemented; the local automated suite passed 67 tests on 2026-10-20, and Ruff and mypy checks pass. This is not production-launch approval: identity-provider and admin-role decisions, target deployment rehearsal, rights-cleared catalog operations, target-device validation, and load testing remain open. Production viewer/admin routes fail closed until authentication is selected and implemented. See the [implementation dashboard](docs/development/IMPLEMENTATION_STATUS.md) and the maintained [project checklist](checklist.md).
 
 ## Quick Start
 

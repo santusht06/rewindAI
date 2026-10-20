@@ -7,13 +7,14 @@ Validates:
 - OPS-006, AC-016: Admin title unpublishing, content version deactivation, and rights revocation
 """
 
+import sqlite3
 from pathlib import Path
+
 import pytest
 import pytest_asyncio
-import sqlite3
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from pydantic import SecretStr
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from ops.scripts.backup_restore import (
     calculate_sha256,
@@ -115,8 +116,8 @@ async def test_sliding_window_rate_limiter_unit():
 
     # Allow up to 3 requests per 60 seconds
     allowed1, retry1 = unit_limiter.is_allowed(key, max_requests=3, window_seconds=60)
-    allowed2, retry2 = unit_limiter.is_allowed(key, max_requests=3, window_seconds=60)
-    allowed3, retry3 = unit_limiter.is_allowed(key, max_requests=3, window_seconds=60)
+    allowed2, _ = unit_limiter.is_allowed(key, max_requests=3, window_seconds=60)
+    allowed3, _ = unit_limiter.is_allowed(key, max_requests=3, window_seconds=60)
 
     assert allowed1 is True
     assert allowed2 is True
@@ -236,6 +237,19 @@ async def test_admin_unpublish_and_rights_revocation(
     assert q_res.status_code == 200
     q_data = q_res.json()
     assert q_data["outcome"] == "unsupported_title"
+
+
+@pytest.mark.asyncio
+async def test_admin_routes_fail_closed_in_production(
+    api_client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "environment", "production")
+    response = await api_client.post(
+        "/api/v1/admin/titles/not-a-real-title/unpublish",
+        headers={"X-Admin-Token": TEST_ADMIN_TOKEN},
+    )
+    assert response.status_code == 503
+    assert response.json()["code"] == "ADMIN_AUTHORIZATION_NOT_CONFIGURED"
 
 
 def test_disaster_recovery_backup_and_restore(tmp_path: Path):

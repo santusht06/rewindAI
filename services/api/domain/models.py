@@ -6,7 +6,6 @@ Implements SRS-CAT-001, SRS-SES-001..004, SRS-SPO-001..004, 03_DOMAIN_MODEL_AND_
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 

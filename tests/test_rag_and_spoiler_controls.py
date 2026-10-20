@@ -18,24 +18,20 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from services.api.ai.orchestrator import RagOrchestrator
-from services.api.ai.provider import DeterministicMockModelProvider, ModelProvider
+from services.api.ai.provider import ModelProvider
 from services.api.api.dependencies import get_db
 from services.api.domain.models import (
-    ContentProcessingStatus,
     MovieStatus,
     ProgressSource,
     SpoilerMode,
 )
 from services.api.errors import ProviderTimeoutError
 from services.api.infrastructure.repositories import (
-    ContentVersionRepository,
     MovieRepository,
-    SubtitleChunkRepository,
     ViewingSessionRepository,
 )
 from services.api.infrastructure.tables import Base
 from services.api.main import create_app
-
 
 # Sample narrative script with early, middle, and late plot revelations
 SCRIPT_SRT = """1

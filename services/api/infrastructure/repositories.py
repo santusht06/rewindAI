@@ -6,15 +6,14 @@ Implements BE-DATA-004, BE-DATA-005, SRS-CAT-001, SRS-SES-001..004, and 03_DOMAI
 import json
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import and_, delete, desc, func, select, update
+from sqlalchemy import and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.domain.models import (
     AuditAction,
-    AuditEventAction,
     ContentProcessingStatus,
     MovieStatus,
     ProgressSource,
@@ -129,11 +128,8 @@ class ContentVersionRepository:
         actual_checksum = source_hash or source_checksum or "default_checksum"
         if version_number is None and version_tag:
             # Extract number from v1.0.0 or similar if possible
-            try:
-                digits = "".join(filter(str.isdigit, version_tag))
-                version_number = int(digits) if digits else None
-            except Exception:
-                version_number = None
+            digits = "".join(filter(str.isdigit, version_tag))
+            version_number = int(digits) if digits else None
 
         if version_number is None:
             # Query highest version number for this movie
@@ -485,7 +481,7 @@ class ViewingSessionRepository:
 
     async def set_spoiler_confirmation_nonce(self, session_id: str, expire_seconds: int = 300) -> str:
         nonce = secrets.token_urlsafe(24)
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=expire_seconds)
+        expires_at = datetime.now(UTC) + timedelta(seconds=expire_seconds)
         await self.issue_spoiler_nonce(session_id, nonce, expires_at)
         return nonce
 
@@ -495,11 +491,11 @@ class ViewingSessionRepository:
             return False
         if sess.spoiler_confirmation_nonce != nonce:
             return False
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if sess.spoiler_nonce_expires_at:
             exp = sess.spoiler_nonce_expires_at
             if exp.tzinfo is None:
-                exp = exp.replace(tzinfo=timezone.utc)
+                exp = exp.replace(tzinfo=UTC)
             if exp < now:
                 return False
 

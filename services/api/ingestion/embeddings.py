@@ -8,7 +8,8 @@ Implements:
 import abc
 import hashlib
 import math
-from typing import Sequence
+from collections.abc import Sequence
+
 import httpx
 
 from services.api.config import settings
@@ -22,18 +23,15 @@ class EmbeddingProvider(abc.ABC):
     @abc.abstractmethod
     def model_name(self) -> str:
         """Name of the embedding model."""
-        pass
 
     @property
     @abc.abstractmethod
     def dimension(self) -> int:
         """Vector dimension produced by this provider."""
-        pass
 
     @abc.abstractmethod
     async def embed_texts(self, texts: Sequence[str]) -> list[list[float]]:
         """Generate normalized vector embeddings for a list of text strings."""
-        pass
 
 
 class DeterministicMockEmbeddingProvider(EmbeddingProvider):

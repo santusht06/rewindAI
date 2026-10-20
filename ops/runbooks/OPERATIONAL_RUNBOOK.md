@@ -25,6 +25,7 @@ All secrets and environment variables are strictly managed server-side (`NFR-SEC
 | `ENVIRONMENT` | `development` | `production` | Enables strict CORS and hides docs |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./rewind_local.db` | PostgreSQL connection string | Primary persistent store |
 | `SECRET_KEY` | `dev-insecure-secret...` | 32+ character random secret | Signs single-use spoiler nonces |
+| `ADMIN_API_TOKEN` | None | No production role provider configured | Local/demo-only admin shared token; admin routes fail closed in production |
 | `GEMINI_API_KEY` | None | Valid Google AI Studio / Vertex key | Primary LLM Provider |
 | `OPENAI_API_KEY` | None | Valid OpenAI API key | Optional fallback LLM provider |
 | `RATE_LIMIT_PER_MINUTE` | `60` | `30` - `60` per viewer/IP | Protects model against abuse |
@@ -105,13 +106,46 @@ The restore procedure:
 2. Checks SQLite structural integrity on the source backup.
 3. Atomically restores into a temporary file and validates before replacing the active database.
 
+### 5.3 Database and Migration Scope
+
+`ops/scripts/backup_restore.py` operates on SQLite files only. It is not a PostgreSQL
+backup or restore tool. Before beta/production deployment, select the actual database
+service and use its supported, tested backup and point-in-time recovery mechanism.
+Do not treat a SQLite rehearsal as evidence for PostgreSQL recovery.
+
+### 5.4 Deployment, Migration, and Rollback Rehearsal
+
+The hosting platform, production database, identity provider, and deployment mechanism
+have not been selected. The following is a release sequence to rehearse in the chosen
+non-production environment; it is not evidence that a deployment has occurred:
+
+1. Confirm the reviewed application artifact, environment configuration, operator access,
+   and database-specific backup/restore procedure.
+2. Capture and verify a pre-deployment backup using the target database's supported
+   tooling. Record the artifact/revision, backup identifier, and verification result.
+3. Run `alembic upgrade head` as a single controlled migration step before routing
+   traffic to the new application version. Record the prior and resulting revisions.
+4. Deploy the application artifact and verify `/health/live`, `/health/ready`, viewer
+   authorization, and an approved end-to-end smoke journey before enabling traffic.
+5. If smoke checks fail, stop or drain traffic and roll back the application artifact.
+   Run an Alembic downgrade only after confirming the migration is compatible and the
+   downgrade will not discard required data. If a database restore is required, use
+   the verified target-database recovery procedure during a controlled maintenance
+   window; do not overwrite a live database while application workers are active.
+6. Repeat readiness and smoke checks, then record the incident/change identifier,
+   migration revision, backup/recovery point, operator, timestamps, and results.
+
+Do not mark the beta/production checklist item complete until this sequence has been
+rehearsed against the selected target using non-production data and the evidence is
+recorded. Local SQLite migration and backup tests do not substitute for that rehearsal.
+
 ---
 
 ## 6. Content Rights Revocation & Instant Unpublishing (`OPS-006`, `AC-016`)
 
 If a studio or content owner issues a rights withdrawal or takedown request:
 
-1. **Invoke the Admin Unpublish API:**
+1. **Local/demo only until production admin identity is implemented**, invoke the Admin Unpublish API:
 ```bash
 curl -X POST "http://localhost:8000/api/v1/admin/titles/{title_id}/unpublish" \
   -H "X-Admin-Token: $ADMIN_SECRET_TOKEN"

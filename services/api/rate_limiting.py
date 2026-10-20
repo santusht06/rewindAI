@@ -6,10 +6,11 @@ Implements:
 - NFR-SCALE-001: Graceful degradation under load
 """
 
-from collections import defaultdict
 import threading
 import time
-from typing import Callable
+from collections import defaultdict
+from collections.abc import Callable
+
 from fastapi import Request
 
 from services.api.config import settings

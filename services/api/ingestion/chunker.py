@@ -6,6 +6,7 @@ Adheres to:
 """
 
 from typing import Any
+
 from services.api.ingestion.parser import SubtitleCue
 
 
@@ -60,8 +61,7 @@ def _build_chunk_dict(ordinal: int, cues: list[SubtitleCue]) -> dict[str, Any]:
     end_time = cues[-1].end_time_seconds
 
     # If end_time is somehow earlier than start_time due to overlapping cues, clamp to start_time
-    if end_time < start_time:
-        end_time = start_time
+    end_time = max(end_time, start_time)
 
     # Combine text with speaker attribution if present
     text_parts = []

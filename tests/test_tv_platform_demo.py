@@ -6,10 +6,11 @@ Validates:
 - DEMO-001 through DEMO-007: 5-minute live demo user journey repeatability against backend contracts
 """
 
+import zipfile
 from pathlib import Path
+
 import pytest
 import pytest_asyncio
-import zipfile
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -21,12 +22,11 @@ from ops.scripts.package_tv_app import (
     validate_tv_client_assets,
 )
 from services.api.api.dependencies import get_db
-from services.api.domain.models import MovieStatus, ProgressSource, SpoilerMode
+from services.api.domain.models import MovieStatus
 from services.api.infrastructure.repositories import (
     ContentVersionRepository,
     MovieRepository,
     SubtitleChunkRepository,
-    ViewingSessionRepository,
 )
 from services.api.infrastructure.tables import Base
 from services.api.main import create_app

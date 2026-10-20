@@ -8,13 +8,18 @@ Implements:
 """
 
 import json
+import logging
 import math
 import re
 from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from services.api.errors import ProviderUnavailableError
 from services.api.infrastructure.repositories import SubtitleChunkRepository
 from services.api.ingestion.embeddings import EmbeddingProvider, get_embedding_provider
+
+logger = logging.getLogger(__name__)
 
 
 def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
@@ -73,7 +78,8 @@ class SubtitleRetriever:
         try:
             query_embeddings = await self.embedding_provider.embed_texts([query])
             query_vec = query_embeddings[0] if query_embeddings else None
-        except Exception:
+        except ProviderUnavailableError as exc:
+            logger.warning("Semantic query embedding unavailable: %s", type(exc).__name__)
             query_vec = None
 
         scored_candidates: list[tuple[float, dict[str, Any]]] = []
@@ -91,7 +97,8 @@ class SubtitleRetriever:
                 try:
                     c_vec = json.loads(c.embedding_json)
                     sem_score = max(0.0, cosine_similarity(query_vec, c_vec))
-                except Exception:
+                except (json.JSONDecodeError, TypeError, ValueError) as exc:
+                    logger.warning("Ignoring invalid stored embedding: %s", type(exc).__name__)
                     sem_score = 0.0
 
             # Combined score: 60% semantic + 40% keyword match

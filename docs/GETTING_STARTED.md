@@ -60,7 +60,7 @@ ruff check .
 mypy services
 ```
 
-**Current baseline (2026-10-18):** These checks are not clean in the current workspace. `ruff check .` reports 130 findings; `mypy services` reports 117 errors across 12 files. Treat these as existing quality debt to triage, not as successful release gates. Counts can change as code and tool versions change.
+**Last verified (2026-10-20):** `ruff check .` and `mypy services` pass locally. The CI workflow runs those checks with the tests, OpenAPI snapshot check, and a disposable SQLite migration upgrade/downgrade cycle. Run these commands before submitting changes; local success does not mean the GitHub workflow has run for an unpushed branch.
 
 Start the development API:
 
@@ -75,10 +75,10 @@ Useful local URLs:
 | `http://127.0.0.1:8000/tv/` | TV client |
 | `http://127.0.0.1:8000/docs` | Interactive API docs |
 | `http://127.0.0.1:8000/health/live` | Process liveness response |
-| `http://127.0.0.1:8000/health/ready` | Current readiness response |
+| `http://127.0.0.1:8000/health/ready` | Readiness response with database connectivity check |
 | `http://127.0.0.1:8000/health/metrics` | In-process operational metrics |
 
-The readiness endpoint currently reports configured status values; it does not perform a live database connectivity check. Do not treat it as a production dependency probe.
+The readiness endpoint runs a bounded `SELECT 1` against the configured database. It returns HTTP 503 and marks persistence unavailable when that check fails or times out. Liveness remains independent of database health.
 
 ## API Surface
 
@@ -90,7 +90,7 @@ The product-level contract is in the [API requirements](../Rewind_Complete_Proje
 
 - Playback progress is manual. The app does not connect to Prime Video, Netflix, or other third-party playback systems.
 - Only SRT and WebVTT subtitle assets are currently supported. Process only material you have permission to ingest and store.
-- The default viewer identity is a local fallback, and the current admin authorization helper is a development placeholder. Neither provides production authentication or authorization. Do not expose the service to untrusted networks.
+- Viewer identity and admin authorization are local/demo-only. Production requests to viewer and admin routes fail closed with HTTP 503 until an identity provider and operator role model are selected and implemented. Do not expose the service to untrusted networks.
 - Browser and automated tests do not prove compatibility on a physical Fire TV or Vega OS device. Record target-device or emulator results separately.
 - The project is not approved for production launch. Track remaining work in the [implementation dashboard](development/IMPLEMENTATION_STATUS.md), [known issues](development/KNOWN_ISSUES.md), and [project checklist](../checklist.md).
 

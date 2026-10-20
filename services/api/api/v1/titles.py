@@ -6,6 +6,8 @@ Adheres to:
 - 04_API_CONTRACT.md (Bounded pagination, safe index status)
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,10 +26,10 @@ router = APIRouter(prefix="/titles", tags=["titles"])
 
 @router.get("", response_model=TitleListResponse)
 async def list_titles(
+    db: Annotated[AsyncSession, Depends(get_db)],
     query: str | None = Query(default=None, max_length=100, description="Optional search term"),
     limit: int = Query(default=20, ge=1, le=50, description="Page limit (max 50)"),
     cursor: str | None = Query(default=None, description="Cursor for pagination"),
-    db: AsyncSession = Depends(get_db),
 ) -> TitleListResponse:
     """List published titles available for viewing and Q&A."""
     movie_repo = MovieRepository(db)
@@ -63,7 +65,7 @@ async def list_titles(
 @router.get("/{title_id}", response_model=TitleDetailResponse)
 async def get_title(
     title_id: str,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> TitleDetailResponse:
     """Retrieve title details and Q&A availability.
     
@@ -84,7 +86,7 @@ async def get_title(
         display_title=movie.display_title,
         year=movie.year,
         duration_seconds=movie.duration_seconds,
-        status=movie.status,
+        status=MovieStatus(movie.status),
         questions_available=questions_available,
         supported_locales=["en", "es", "fr", "hi", "ja"],
     )

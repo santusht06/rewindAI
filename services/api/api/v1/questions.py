@@ -6,6 +6,8 @@ Adheres strictly to:
 - 04_API_CONTRACT.md
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,9 +23,9 @@ router = APIRouter(prefix="/sessions", tags=["questions"])
 async def ask_question(
     session_id: str,
     body: QuestionRequest,
-    user_id: str = Depends(get_current_user_id),
-    db: AsyncSession = Depends(get_db),
-    _rate_limit: None = Depends(RateLimiter()),
+    user_id: Annotated[str, Depends(get_current_user_id)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _rate_limit: Annotated[None, Depends(RateLimiter())],
 ) -> QuestionResponse:
     """Submit a question within a viewing session.
 

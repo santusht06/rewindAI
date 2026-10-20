@@ -1,7 +1,7 @@
 """Viewer endpoints for bounded subtitle translation and character facts."""
 
 from collections import defaultdict
-from typing import Annotated, cast
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,10 +50,10 @@ async def _get_session_context(
     if session.user_id != user_id:
         raise AuthorizationError("You do not have permission to access this viewing session.")
 
-    movie = await MovieRepository(db).get_by_id(cast(str, session.movie_id))
+    movie = await MovieRepository(db).get_by_id(session.movie_id)
     if not movie:
         raise NotFoundError("Movie associated with this viewing session was not found.")
-    active_version = await ContentVersionRepository(db).get_active_version(cast(str, movie.id))
+    active_version = await ContentVersionRepository(db).get_active_version(movie.id)
     if not active_version:
         raise NotFoundError("This title does not have an active subtitle index.")
 
@@ -62,19 +62,19 @@ async def _get_session_context(
         and session.full_spoilers_confirmed
     )
     boundary = (
-        float(cast(int, movie.duration_seconds))
+        float(movie.duration_seconds)
         if full_spoilers
-        else cast(float, session.current_position_seconds)
+        else session.current_position_seconds
     )
     return session, movie, active_version, boundary
 
 
 def _line_schema(chunk: SubtitleCueTable) -> SubtitleLineSchema:
     return SubtitleLineSchema(
-        cue_id=cast(str, chunk.id),
-        start_time_seconds=int(cast(float, chunk.start_time_seconds)),
-        end_time_seconds=int(cast(float, chunk.end_time_seconds)),
-        text=cast(str, chunk.text),
+        cue_id=chunk.id,
+        start_time_seconds=int(chunk.start_time_seconds),
+        end_time_seconds=int(chunk.end_time_seconds),
+        text=chunk.text,
     )
 
 
@@ -91,7 +91,7 @@ async def search_subtitle_lines(
     if not normalized_query:
         raise ValidationError("Subtitle search query cannot be blank.")
     cues = await SubtitleCueRepository(db).search_within_boundary(
-        content_version_id=cast(str, version.id),
+        content_version_id=version.id,
         query_text=normalized_query,
         max_end_time_seconds=boundary,
     )
@@ -112,28 +112,28 @@ async def translate_subtitle_line(
     """Translate one selected indexed subtitle passage with a verified timestamp citation."""
     _, movie, version, boundary = await _get_session_context(session_id, user_id, db)
     cues = SubtitleCueRepository(db)
-    selected = await cues.get_cue(body.cue_id, cast(str, version.id), boundary)
+    selected = await cues.get_cue(body.cue_id, version.id, boundary)
     if not selected:
         raise NotFoundError("The selected subtitle is not available within the current story boundary.")
 
     surrounding = await cues.get_adjacent_cues(
-        cast(str, version.id), cast(int, selected.ordinal), boundary
+        version.id, selected.ordinal, boundary
     )
     provider = get_model_provider()
     translated = await provider.translate_subtitle(
-        original_text=cast(str, selected.text),
-        source_locale=cast(str, movie.language),
+        original_text=selected.text,
+        source_locale=movie.language,
         target_locale=body.target_locale,
         surrounding_context=[
-            cast(str, chunk.text) for chunk in surrounding if chunk.id != selected.id
+            chunk.text for chunk in surrounding if chunk.id != selected.id
         ],
         explain_context=body.explain_context,
     )
     citation = TranslationCitationSchema(
-        cue_id=cast(str, selected.id),
-        start_time_seconds=int(cast(float, selected.start_time_seconds)),
-        end_time_seconds=int(cast(float, selected.end_time_seconds)),
-        text=cast(str, selected.text),
+        cue_id=selected.id,
+        start_time_seconds=int(selected.start_time_seconds),
+        end_time_seconds=int(selected.end_time_seconds),
+        text=selected.text,
     )
     translation = translated.get("translation")
     if (
@@ -144,7 +144,7 @@ async def translate_subtitle_line(
         message = translated.get("message")
         return TranslationResponse(
             outcome="insufficient_evidence",
-            original_text=cast(str, selected.text),
+            original_text=selected.text,
             target_locale=body.target_locale,
             citation=citation,
             message=(
@@ -157,7 +157,7 @@ async def translate_subtitle_line(
     explanation = translated.get("contextual_explanation")
     return TranslationResponse(
         outcome="translated",
-        original_text=cast(str, selected.text),
+        original_text=selected.text,
         target_locale=body.target_locale,
         translation=translation.strip(),
         contextual_explanation=(
@@ -177,16 +177,16 @@ async def get_character_cards(
 ) -> CharacterCardsResponse:
     """Return curated character facts revealed no later than the session's allowed boundary."""
     _, _, version, boundary = await _get_session_context(session_id, user_id, db)
-    facts = await StoryFactRepository(db).list_character_facts(cast(str, version.id), boundary)
+    facts = await StoryFactRepository(db).list_character_facts(version.id, boundary)
     grouped: dict[str, list[CharacterFactResponse]] = defaultdict(list)
     for item in facts:
         if item.character_name:
-            name = cast(str, item.character_name)
+            name = item.character_name
             grouped[name].append(
                 CharacterFactResponse(
-                    fact=cast(str, item.fact),
-                    relationship=cast(str | None, item.relationship_description),
-                    first_known_at_seconds=int(cast(float, item.first_known_at_seconds)),
+                    fact=item.fact,
+                    relationship=item.relationship_description,
+                    first_known_at_seconds=int(item.first_known_at_seconds),
                 )
             )
     return CharacterCardsResponse(

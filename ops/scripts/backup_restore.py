@@ -7,13 +7,13 @@ Implements:
 """
 
 import argparse
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import sqlite3
 import sys
-from typing import Any
+from contextlib import closing
+from datetime import UTC, datetime
+from pathlib import Path
 
 
 def calculate_sha256(file_path: Path) -> str:
@@ -30,13 +30,12 @@ def verify_sqlite_integrity(db_path: Path) -> bool:
     if not db_path.exists():
         return False
     try:
-        conn = sqlite3.connect(str(db_path))
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA integrity_check;")
-        result = cursor.fetchone()
-        conn.close()
+        with closing(sqlite3.connect(str(db_path))) as conn:
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA integrity_check;")
+            result = cursor.fetchone()
         return bool(result and result[0] == "ok")
-    except Exception as exc:
+    except sqlite3.Error as exc:
         print(f"Integrity check failed with error: {exc}", file=sys.stderr)
         return False
 
@@ -47,21 +46,15 @@ def get_table_counts(db_path: Path) -> dict[str, int]:
     if not db_path.exists():
         return counts
 
-    try:
-        conn = sqlite3.connect(str(db_path))
+    with closing(sqlite3.connect(str(db_path))) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
         tables = [row[0] for row in cursor.fetchall()]
 
         for table in tables:
-            try:
-                cursor.execute(f"SELECT COUNT(*) FROM \"{table}\";")
-                counts[table] = cursor.fetchone()[0]
-            except Exception:
-                pass
-        conn.close()
-    except Exception:
-        pass
+            quoted_table = table.replace('"', '""')
+            cursor.execute(f'SELECT COUNT(*) FROM "{quoted_table}";')
+            counts[table] = cursor.fetchone()[0]
     return counts
 
 
@@ -74,7 +67,7 @@ def create_backup(db_path: Path, output_dir: Path) -> tuple[Path, Path]:
         raise FileNotFoundError(f"Source database file not found: {db_path}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp_str = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     backup_file = output_dir / f"rewind_backup_{timestamp_str}.db"
     manifest_file = output_dir / f"rewind_backup_{timestamp_str}.json"
 
@@ -98,7 +91,7 @@ def create_backup(db_path: Path, output_dir: Path) -> tuple[Path, Path]:
     size_bytes = backup_file.stat().st_size
 
     manifest_data = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "source_db": str(db_path.resolve()),
         "backup_file": backup_file.name,
         "sha256_checksum": checksum,

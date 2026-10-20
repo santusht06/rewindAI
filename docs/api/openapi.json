@@ -41,11 +41,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Health Ready Health Ready Get"
-                }
+                "schema": {}
               }
             }
           }

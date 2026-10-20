@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from services.api.api.dependencies import get_db
 from services.api.config import settings
-from services.api.domain.models import ContentProcessingStatus, MovieStatus
+from services.api.domain.models import MovieStatus
 from services.api.errors import ValidationError
 from services.api.infrastructure.repositories import (
     ContentVersionRepository,
@@ -36,7 +36,6 @@ from services.api.ingestion.parser import (
 )
 from services.api.ingestion.pipeline import IngestionPipeline
 from services.api.main import create_app
-
 
 SAMPLE_SRT = """1
 00:00:10,500 --> 00:00:14,200

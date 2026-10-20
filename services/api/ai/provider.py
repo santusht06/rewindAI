@@ -24,7 +24,6 @@ class ModelProvider(abc.ABC):
     @abc.abstractmethod
     def provider_name(self) -> str:
         """Name of the model provider."""
-        pass
 
     @abc.abstractmethod
     async def generate_grounded_answer(
@@ -44,7 +43,6 @@ class ModelProvider(abc.ABC):
                 "clarification_prompt": str | None,
             }
         """
-        pass
 
     async def translate_subtitle(
         self,

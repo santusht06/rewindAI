@@ -4,6 +4,7 @@ Implements SRS-QA-001, 04_API_CONTRACT section 3, NFR-OBS-001.
 """
 
 from typing import Any
+
 from pydantic import BaseModel, Field
 
 

@@ -3,10 +3,10 @@
 Verifies BE-DATA-001..006, SRS-CAT-001, SRS-SES-001..004, SRS-SPO-001..004, AC-004, AC-009, AC-010.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 import pytest
 import pytest_asyncio
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from services.api.domain.models import (
@@ -21,7 +21,6 @@ from services.api.infrastructure.repositories import (
     AuditEventRepository,
     ContentVersionRepository,
     MovieRepository,
-    QuestionRepository,
     SubtitleChunkRepository,
     ViewingSessionRepository,
 )
@@ -51,7 +50,7 @@ async def test_db_session():
 async def test_movie_repository_crud(test_db_session: AsyncSession) -> None:
     """Verify movie creation, published listing, and status updates (SRS-CAT-001)."""
     repo = MovieRepository(test_db_session)
-    movie1 = await repo.create(title="Inception", release_year=2010, status=MovieStatus.PUBLISHED)
+    await repo.create(title="Inception", release_year=2010, status=MovieStatus.PUBLISHED)
     movie2 = await repo.create(title="Interstellar", release_year=2014, status=MovieStatus.DRAFT)
 
     # list_published should return only movie1
@@ -215,7 +214,7 @@ async def test_viewing_session_spoiler_workflow(test_db_session: AsyncSession) -
 
     # Issue spoiler confirmation token (valid for 5 minutes)
     nonce = "secret-server-nonce-12345"
-    expires = datetime.now(timezone.utc) + timedelta(minutes=5)
+    expires = datetime.now(UTC) + timedelta(minutes=5)
     await session_repo.issue_spoiler_nonce(sess.id, nonce, expires)
 
     # Attempt confirmation with wrong token -> ConflictError (AC-010)

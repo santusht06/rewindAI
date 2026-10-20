@@ -11,8 +11,11 @@ import time
 import uuid
 from collections.abc import Callable
 from typing import Any
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from services.api.telemetry import telemetry
 
 # Context variable for request correlation ID
 current_request_id: contextvars.ContextVar[str] = contextvars.ContextVar(
@@ -44,7 +47,7 @@ class PrivacyLogFilter(logging.Filter):
     """Logging filter that injects correlation ID and redacts credentials."""
 
     def filter(self, record: logging.LogRecord) -> bool:
-        record.request_id = current_request_id.get()  # type: ignore[attr-defined]
+        record.request_id = current_request_id.get()
         if isinstance(record.msg, str):
             record.msg = redact_sensitive_text(record.msg)
         return True
@@ -88,14 +91,12 @@ class RequestCorrelationMiddleware(BaseHTTPMiddleware):
             duration_ms = (time.perf_counter() - start_time) * 1000.0
             response.headers["X-Request-ID"] = req_id
 
-            # Record operational telemetry (OPS-001, OPS-004)
             try:
-                from services.api.telemetry import telemetry
                 telemetry.record_request()
                 telemetry.record_latency("http_request", duration_ms)
                 telemetry.record_outcome(f"http_{response.status_code}")
-            except Exception:
-                pass
+            except RuntimeError as telemetry_error:
+                logger.warning("Request telemetry recording failed: %s", type(telemetry_error).__name__)
 
             logger.info(
                 "HTTP %s %s completed status=%d duration=%.2fms",
@@ -105,16 +106,20 @@ class RequestCorrelationMiddleware(BaseHTTPMiddleware):
                 duration_ms,
             )
             return response
-        except Exception as exc:
+        except Exception:
             duration_ms = (time.perf_counter() - start_time) * 1000.0
             try:
-                from services.api.telemetry import telemetry
                 telemetry.record_request()
                 telemetry.record_latency("http_request", duration_ms)
                 telemetry.record_outcome("http_500")
-            except Exception:
-                pass
-            logger.exception("HTTP %s %s unhandled exception after %.2fms: %s", request.method, request.url.path, duration_ms, str(exc))
-            raise exc
+            except RuntimeError as telemetry_error:
+                logger.warning("Failed-request telemetry recording failed: %s", type(telemetry_error).__name__)
+            logger.exception(
+                "HTTP %s %s failed after %.2fms",
+                request.method,
+                request.url.path,
+                duration_ms,
+            )
+            raise
         finally:
             current_request_id.reset(token)

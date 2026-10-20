@@ -3,13 +3,14 @@
 Implements 03_DOMAIN_MODEL_AND_DATABASE, 09_database_erd.mmd, and NFR-SEC-002.
 """
 
+from __future__ import annotations
+
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Column,
     DateTime,
     Float,
     ForeignKey,
@@ -18,13 +19,15 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from services.api.infrastructure.database import Base
 
+__all__ = ["Base"]
+
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class MovieTable(Base):
@@ -32,14 +35,16 @@ class MovieTable(Base):
 
     __tablename__ = "movies"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    title = Column(String(255), nullable=False)
-    release_year = Column(Integer, nullable=True)
-    duration_seconds = Column(Integer, nullable=False, default=7200)
-    language = Column(String(10), nullable=False, default="en")
-    status = Column(String(20), nullable=False, default="draft", index=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    release_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=7200)
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
+    )
 
     @property
     def display_title(self) -> str:
@@ -51,10 +56,10 @@ class MovieTable(Base):
 
 
     # Relationships
-    content_versions = relationship(
+    content_versions: Mapped[list[ContentVersionTable]] = relationship(
         "ContentVersionTable", back_populates="movie", cascade="all, delete-orphan"
     )
-    sessions = relationship(
+    sessions: Mapped[list[ViewingSessionTable]] = relationship(
         "ViewingSessionTable", back_populates="movie", cascade="all, delete-orphan"
     )
 
@@ -64,17 +69,23 @@ class ContentVersionTable(Base):
 
     __tablename__ = "content_versions"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    movie_id = Column(String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True)
-    source_type = Column(String(20), nullable=False, default="srt")
-    source_checksum = Column(String(64), nullable=False)
-    version_number = Column(Integer, nullable=False, default=1)
-    processing_status = Column(String(20), nullable=False, default="queued", index=True)
-    embedding_model = Column(String(100), nullable=True)
-    chunk_count = Column(Integer, nullable=False, default=0)
-    is_active = Column(Boolean, nullable=False, default=False, index=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    movie_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    source_type: Mapped[str] = mapped_column(String(20), nullable=False, default="srt")
+    source_checksum: Mapped[str] = mapped_column(String(64), nullable=False)
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    processing_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="queued", index=True
+    )
+    embedding_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    chunk_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
+    )
 
     # Unique constraint per movie and version
     __table_args__ = (
@@ -82,10 +93,14 @@ class ContentVersionTable(Base):
     )
 
     # Relationships
-    movie = relationship("MovieTable", back_populates="content_versions")
-    chunks = relationship("SubtitleChunkTable", back_populates="content_version", cascade="all, delete-orphan")
-    facts = relationship("StoryFactTable", back_populates="content_version", cascade="all, delete-orphan")
-    subtitle_cues = relationship(
+    movie: Mapped[MovieTable] = relationship("MovieTable", back_populates="content_versions")
+    chunks: Mapped[list[SubtitleChunkTable]] = relationship(
+        "SubtitleChunkTable", back_populates="content_version", cascade="all, delete-orphan"
+    )
+    facts: Mapped[list[StoryFactTable]] = relationship(
+        "StoryFactTable", back_populates="content_version", cascade="all, delete-orphan"
+    )
+    subtitle_cues: Mapped[list[SubtitleCueTable]] = relationship(
         "SubtitleCueTable", back_populates="content_version", cascade="all, delete-orphan"
     )
 
@@ -95,20 +110,22 @@ class SubtitleChunkTable(Base):
 
     __tablename__ = "subtitle_chunks"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    content_version_id = Column(
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    content_version_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("content_versions.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    movie_id = Column(String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True)
-    ordinal = Column(Integer, nullable=False)
-    start_time_seconds = Column(Float, nullable=False, index=True)
-    end_time_seconds = Column(Float, nullable=False, index=True)
-    start_time_formatted = Column(String(20), nullable=False)
-    end_time_formatted = Column(String(20), nullable=False)
-    text = Column(Text, nullable=False)
-    speaker = Column(String(100), nullable=True)
-    embedding_json = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+    movie_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    start_time_seconds: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+    end_time_seconds: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+    start_time_formatted: Mapped[str] = mapped_column(String(20), nullable=False)
+    end_time_formatted: Mapped[str] = mapped_column(String(20), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    speaker: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    embedding_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     __table_args__ = (
         UniqueConstraint("content_version_id", "ordinal", name="uq_version_chunk_ordinal"),
@@ -117,7 +134,9 @@ class SubtitleChunkTable(Base):
     )
 
     # Relationships
-    content_version = relationship("ContentVersionTable", back_populates="chunks")
+    content_version: Mapped[ContentVersionTable] = relationship(
+        "ContentVersionTable", back_populates="chunks"
+    )
 
 
 class SubtitleCueTable(Base):
@@ -125,16 +144,18 @@ class SubtitleCueTable(Base):
 
     __tablename__ = "subtitle_cues"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    content_version_id = Column(
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    content_version_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("content_versions.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    movie_id = Column(String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True)
-    ordinal = Column(Integer, nullable=False)
-    start_time_seconds = Column(Float, nullable=False, index=True)
-    end_time_seconds = Column(Float, nullable=False, index=True)
-    text = Column(Text, nullable=False)
-    speaker = Column(String(100), nullable=True)
+    movie_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    start_time_seconds: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+    end_time_seconds: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    speaker: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("content_version_id", "ordinal", name="uq_version_cue_ordinal"),
@@ -142,7 +163,9 @@ class SubtitleCueTable(Base):
         CheckConstraint("end_time_seconds >= start_time_seconds", name="chk_cue_end_after_start"),
     )
 
-    content_version = relationship("ContentVersionTable", back_populates="subtitle_cues")
+    content_version: Mapped[ContentVersionTable] = relationship(
+        "ContentVersionTable", back_populates="subtitle_cues"
+    )
 
 
 class StoryFactTable(Base):
@@ -150,20 +173,24 @@ class StoryFactTable(Base):
 
     __tablename__ = "story_facts"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    content_version_id = Column(
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    content_version_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("content_versions.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    movie_id = Column(String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True)
-    character_name = Column(String(120), nullable=True, index=True)
-    fact = Column(Text, nullable=False)
-    relationship_description = Column("relationship", String(240), nullable=True)
-    first_known_at_seconds = Column(Float, nullable=False, index=True)
-    validation_status = Column(String(20), nullable=False, default="verified")
-    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+    movie_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    character_name: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    fact: Mapped[str] = mapped_column(Text, nullable=False)
+    relationship_description: Mapped[str | None] = mapped_column("relationship", String(240), nullable=True)
+    first_known_at_seconds: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+    validation_status: Mapped[str] = mapped_column(String(20), nullable=False, default="verified")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     # Relationships
-    content_version = relationship("ContentVersionTable", back_populates="facts")
+    content_version: Mapped[ContentVersionTable] = relationship(
+        "ContentVersionTable", back_populates="facts"
+    )
 
 
 class ViewingSessionTable(Base):
@@ -171,25 +198,31 @@ class ViewingSessionTable(Base):
 
     __tablename__ = "viewing_sessions"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(100), nullable=False, default="anonymous", index=True)
-    movie_id = Column(String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True)
-    current_position_seconds = Column(Float, nullable=False, default=0.0, index=True)
-    progress_source = Column(String(30), nullable=False, default="unknown")
-    spoiler_mode = Column(String(10), nullable=False, default="safe")
-    full_spoilers_confirmed = Column(Boolean, nullable=False, default=False)
-    spoiler_confirmation_nonce = Column(String(64), nullable=True, index=True)
-    spoiler_nonce_expires_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str] = mapped_column(String(100), nullable=False, default="anonymous", index=True)
+    movie_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    current_position_seconds: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, index=True)
+    progress_source: Mapped[str] = mapped_column(String(30), nullable=False, default="unknown")
+    spoiler_mode: Mapped[str] = mapped_column(String(10), nullable=False, default="safe")
+    full_spoilers_confirmed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    spoiler_confirmation_nonce: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    spoiler_nonce_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
+    )
 
     __table_args__ = (
         CheckConstraint("current_position_seconds >= 0", name="chk_session_position_non_negative"),
     )
 
     # Relationships
-    movie = relationship("MovieTable", back_populates="sessions")
-    questions = relationship("QuestionTable", back_populates="session", cascade="all, delete-orphan")
+    movie: Mapped[MovieTable] = relationship("MovieTable", back_populates="sessions")
+    questions: Mapped[list[QuestionTable]] = relationship(
+        "QuestionTable", back_populates="session", cascade="all, delete-orphan"
+    )
 
 
 class QuestionTable(Base):
@@ -197,22 +230,26 @@ class QuestionTable(Base):
 
     __tablename__ = "questions"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    session_id = Column(
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("viewing_sessions.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    movie_id = Column(String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True)
-    question_text = Column(Text, nullable=False)
-    request_id = Column(String(64), nullable=False, index=True)
-    playback_position_seconds = Column(Float, nullable=False)
-    spoiler_mode = Column(String(10), nullable=False)
-    status = Column(String(40), nullable=False, default="answered")
-    answer_text = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+    movie_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    question_text: Mapped[str] = mapped_column(Text, nullable=False)
+    request_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    playback_position_seconds: Mapped[float] = mapped_column(Float, nullable=False)
+    spoiler_mode: Mapped[str] = mapped_column(String(10), nullable=False)
+    status: Mapped[str] = mapped_column(String(40), nullable=False, default="answered")
+    answer_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     # Relationships
-    session = relationship("ViewingSessionTable", back_populates="questions")
-    sources = relationship("AnswerSourceTable", back_populates="question", cascade="all, delete-orphan")
+    session: Mapped[ViewingSessionTable] = relationship("ViewingSessionTable", back_populates="questions")
+    sources: Mapped[list[AnswerSourceTable]] = relationship(
+        "AnswerSourceTable", back_populates="question", cascade="all, delete-orphan"
+    )
 
 
 class AnswerSourceTable(Base):
@@ -220,21 +257,21 @@ class AnswerSourceTable(Base):
 
     __tablename__ = "answer_sources"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    question_id = Column(
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    question_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("questions.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    chunk_id = Column(
+    chunk_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("subtitle_chunks.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    story_fact_id = Column(
+    story_fact_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("story_facts.id", ondelete="SET NULL"), nullable=True
     )
-    relevance_score = Column(Float, nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+    relevance_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     # Relationships
-    question = relationship("QuestionTable", back_populates="sources")
+    question: Mapped[QuestionTable] = relationship("QuestionTable", back_populates="sources")
 
 
 class AuditEventTable(Base):
@@ -242,11 +279,11 @@ class AuditEventTable(Base):
 
     __tablename__ = "audit_events"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    actor = Column(String(100), nullable=False)
-    action = Column(String(50), nullable=False, index=True)
-    target_type = Column(String(50), nullable=False)
-    target_id = Column(String(100), nullable=False, index=True)
-    correlation_id = Column(String(64), nullable=False, index=True)
-    metadata_json = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    actor: Mapped[str] = mapped_column(String(100), nullable=False)
+    action: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    target_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    correlation_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
