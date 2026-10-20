@@ -41,6 +41,13 @@ from services.api.infrastructure.repositories import (
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
+def _normalize_client_progress_source(source: ProgressSource) -> ProgressSource:
+    """Prevent clients from asserting provenance that requires server verification."""
+    if source in (ProgressSource.VERIFIED_INTEGRATION, ProgressSource.PARTNER_SYNC):
+        return ProgressSource.MANUAL_SLIDER
+    return source
+
+
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_session(
     body: CreateSessionRequest,
@@ -59,10 +66,7 @@ async def create_session(
     # Validate initial position does not exceed movie duration
     initial_pos = min(body.position_seconds, movie.duration_seconds)
 
-    # Normalize progress source - untrusted client cannot assert verified_integration
-    source = body.source
-    if source == ProgressSource.VERIFIED_INTEGRATION:
-        source = ProgressSource.MANUAL_SLIDER
+    source = _normalize_client_progress_source(body.source)
 
     session = await session_repo.create_session(
         user_id=user_id,
@@ -146,7 +150,7 @@ async def update_progress(
 
     Enforces:
     - Bounded position within movie duration.
-    - Server-side source verification (untrusted clients cannot assert verified_integration).
+    - Untrusted clients cannot assert verified_integration or partner_sync provenance.
     - Session ownership check.
     """
     session_repo = ViewingSessionRepository(db)
@@ -169,15 +173,9 @@ async def update_progress(
             details={"max_allowed": movie.duration_seconds},
         )
 
-    # Server source verification policy per 04_API_CONTRACT:
-    # A standard TV client cannot self-assert verified_integration
-    is_verified = False
-    source = body.source
-    if source == ProgressSource.VERIFIED_INTEGRATION:
-        source = ProgressSource.MANUAL_SLIDER
-        is_verified = False
-    elif source == ProgressSource.PARTNER_SYNC:
-        is_verified = True
+    # Partner authentication is not implemented, so client-supplied provenance
+    # cannot establish verification.
+    source = _normalize_client_progress_source(body.source)
 
     updated_session = await session_repo.update_progress(
         session_id=session_id,
@@ -191,7 +189,7 @@ async def update_progress(
         session_id=updated_session.id,
         current_position_seconds=updated_session.current_position_seconds,
         progress_source=updated_session.progress_source,
-        is_verified=is_verified,
+        is_verified=False,
         spoiler_mode=updated_session.spoiler_mode,
         updated_at=updated_session.updated_at,
     )

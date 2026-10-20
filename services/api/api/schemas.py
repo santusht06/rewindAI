@@ -74,7 +74,10 @@ class CreateSessionRequest(BaseModel):
     title_id: str = Field(..., description="ID of the movie title to view")
     locale: str = Field(default="en", max_length=10)
     position_seconds: int = Field(default=0, ge=0, description="Initial playback offset")
-    source: ProgressSource = Field(default=ProgressSource.MANUAL_SLIDER)
+    source: ProgressSource = Field(
+        default=ProgressSource.MANUAL_SLIDER,
+        description="Client source; server-only provenance values are normalized.",
+    )
 
 
 class SessionResponse(BaseModel):
@@ -94,7 +97,7 @@ class SessionResponse(BaseModel):
 class UpdateProgressRequest(BaseModel):
     """Request to update playback position.
 
-    Per 04_API_CONTRACT: Client cannot self-assert verified_integration without
+    Clients cannot self-assert verified_integration or partner_sync without
     server-side cryptographic verification or partner validation.
     """
     position_seconds: int = Field(..., ge=0, description="Playback position in integer seconds")

@@ -378,7 +378,7 @@
           "sessions"
         ],
         "summary": "Update Progress",
-        "description": "Update viewing session playback position.\n\nEnforces:\n- Bounded position within movie duration.\n- Server-side source verification (untrusted clients cannot assert verified_integration).\n- Session ownership check.",
+        "description": "Update viewing session playback position.\n\nEnforces:\n- Bounded position within movie duration.\n- Untrusted clients cannot assert verified_integration or partner_sync provenance.\n- Session ownership check.",
         "operationId": "update_progress_api_v1_sessions__session_id__progress_patch",
         "parameters": [
           {
@@ -1271,6 +1271,7 @@
           },
           "source": {
             "$ref": "#/components/schemas/ProgressSource",
+            "description": "Client source; server-only provenance values are normalized.",
             "default": "manual_slider"
           }
         },
@@ -2025,7 +2026,7 @@
           "position_seconds"
         ],
         "title": "UpdateProgressRequest",
-        "description": "Request to update playback position.\n\nPer 04_API_CONTRACT: Client cannot self-assert verified_integration without\nserver-side cryptographic verification or partner validation."
+        "description": "Request to update playback position.\n\nClients cannot self-assert verified_integration or partner_sync without\nserver-side cryptographic verification or partner validation."
       },
       "ValidationError": {
         "properties": {

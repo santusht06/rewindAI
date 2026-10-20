@@ -187,7 +187,7 @@ async def test_session_lifecycle_and_spoiler_controls(
     # 1. Create Session
     create_res = await api_client.post(
         "/api/v1/sessions",
-        json={"title_id": movie.id, "position_seconds": 120},
+        json={"title_id": movie.id, "position_seconds": 120, "source": "partner_sync"},
         headers=headers,
     )
     assert create_res.status_code == 201
@@ -236,6 +236,15 @@ async def test_session_lifecycle_and_spoiler_controls(
     # Normalized to manual slider, is_verified is False
     assert untrusted_res.json()["progress_source"] == "manual_slider"
     assert untrusted_res.json()["is_verified"] is False
+
+    untrusted_partner_res = await api_client.patch(
+        f"/api/v1/sessions/{session_id}/progress",
+        json={"position_seconds": 4200, "source": "partner_sync"},
+        headers=headers,
+    )
+    assert untrusted_partner_res.status_code == 200
+    assert untrusted_partner_res.json()["progress_source"] == "manual_slider"
+    assert untrusted_partner_res.json()["is_verified"] is False
 
 
 @pytest.mark.asyncio

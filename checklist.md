@@ -42,13 +42,14 @@ Living project checklist for implemented features, verified changes, and remaini
 
 ### Setup and Release
 
-- [ ] Verify a fresh editable install using `pip install -e ".[dev]"` and record the result here.
+- [x] Verify a fresh editable install using `pip install -e ".[dev]"` and record the result here.
 - [ ] Keep the test suite passing and triage static-check debt: baseline `ruff check .` 130 findings and `mypy services` 117 errors across 12 files (2026-10-18); establish clean gates.
 - [ ] Complete E11 production-launch sign-off; the status dashboard currently marks E11 `NOT_STARTED`.
 - [ ] Verify deployment, migration, backup/restore, and rollback procedures in the intended beta/production environment.
+  - Local validation passed for SQLite migration upgrade/downgrade/re-upgrade and backup/restore tests. The intended beta/production environment is not available in this workspace, so deployment and target-environment recovery remain unverified.
 - [ ] Replace the fallback viewer identity and development admin check with production-grade authentication/authorization; test unauthorized access paths.
 - [ ] Make readiness probes verify required dependencies such as database connectivity.
-- [ ] Validate progress provenance server-side; do not mark caller-supplied `partner_sync` as verified without partner authentication.
+- [x] Validate progress provenance server-side; do not mark caller-supplied `partner_sync` as verified without partner authentication.
 - [ ] Keep `docs/api/openapi.json` synchronized with the runtime schema using `ops/scripts/export_openapi.py --check`.
 
 ### Product and Platform Decisions
@@ -75,6 +76,7 @@ Living project checklist for implemented features, verified changes, and remaini
 
 | Date | Change | Verification |
 |---|---|---|
+| 2026-10-20 | Verified a clean editable install and normalized caller-supplied `verified_integration`/`partner_sync` provenance to manual progress; partner synchronization remains unavailable without partner authentication. | Fresh Python 3.14.2 virtual environment: `pip install -e ".[dev]"` succeeded; 62 tests passed; fresh SQLite migration upgrade/downgrade/re-upgrade and backup/restore tests passed. Intended beta/production environment is unavailable, so deployment/recovery verification remains open. |
 | 2026-10-19 | Added line-level subtitle indexing and spoiler-bounded translation, curated timestamped character facts/cards, remote-first TV actions, API contracts, and migration. | Focused tests passed; full suite: 62 passed; OpenAPI snapshot current; migration chain upgraded successfully on temporary SQLite; client JavaScript syntax, focused Ruff, and diff checks passed. |
 | 2026-10-18 | Added explicit setuptools build backend and restricted package discovery to `services`; updated README install/run instructions; created this checklist. | `pip install -e '.[dev]'` succeeded; `pytest -q` passed (55 tests); Uvicorn started and `/health/live` returned `status: alive`. |
 | 2026-10-18 | Expanded README, added local setup/API guide, documented identity/admin/readiness limitations, and clarified beta/production and platform/spoiler evidence. | Documentation review and `git diff --check`; setup and migration commands were verified in the local environment. |

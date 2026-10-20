@@ -54,13 +54,13 @@ The generated OpenAPI schema includes 19 operations. `GET /metrics` is an additi
 | `POST /api/v1/sessions/{session_id}/safe-mode` | Path: `session_id`; optional `X-User-ID`; no body | 200 `SessionResponse` | 403, 404, 422 |
 | `POST /api/v1/sessions/{session_id}/spoiler-confirmation` | Path: `session_id`; optional `X-User-ID`; `SpoilerConfirmationRequest` | 200 `SpoilerConfirmationResponse` | 403 for invalid/expired nonce, 404, 422 |
 
-`CreateSessionRequest` requires `title_id`; optional fields are `locale` (default `en`), `position_seconds` (integer, default 0), and `source` (default `manual_slider`). A client-supplied `verified_integration` source is normalized to `manual_slider`. The initial position is capped at the title duration.
+`CreateSessionRequest` requires `title_id`; optional fields are `locale` (default `en`), `position_seconds` (integer, default 0), and `source` (default `manual_slider`). Client-supplied `verified_integration` and `partner_sync` sources are normalized to `manual_slider`; partner authentication is not implemented. The initial position is capped at the title duration.
 
 `SessionResponse` contains `session_id`, `user_id`, a compact `title` (`id`, `display_title`, optional `year`), `current_position_seconds`, `progress_source`, `spoiler_mode`, `created_at`, and `updated_at`.
 
 `UpdateProgressRequest` requires non-negative integer `position_seconds`; it optionally accepts `source` and non-negative `duration_seconds`. The server validates against the title's stored duration; the request's `duration_seconds` is not used. `ProgressResponse` contains `session_id`, `current_position_seconds`, `progress_source`, `is_verified`, `spoiler_mode`, and `updated_at`.
 
-Progress source enum values are `verified_integration`, `manual`, `manual_slider`, `voice_cue`, `partner_sync`, and `unknown`. **Trust caveat:** the current progress handler changes `verified_integration` to `manual_slider`, but treats a submitted `partner_sync` value as verified. Do not use `partner_sync` from an untrusted client or rely on `is_verified` until partner authentication is implemented and this behavior is corrected.
+Progress source enum values are `verified_integration`, `manual`, `manual_slider`, `voice_cue`, `partner_sync`, and `unknown`. Client-supplied `verified_integration` and `partner_sync` values are normalized to `manual_slider`, and progress updates from the client always return `is_verified: false`. The API has no partner-authenticated progress path; partner synchronization must not be treated as verified until one is implemented.
 
 `SpoilerConfirmationRequest` requires `confirmation_nonce` (minimum 8 characters). The nonce is returned by a question response with outcome `spoiler_confirmation_required`; confirmation consumes it once. `SpoilerConfirmationResponse` contains `session_id`, `spoiler_mode`, `status` (`confirmed`), and `updated_at`.
 
