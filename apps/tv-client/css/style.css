@@ -1666,3 +1666,60 @@ kbd {
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+
+/* Provider Switcher Bar */
+.provider-switch-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 12px 0 24px 0;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+}
+
+.provider-switch-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.provider-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.provider-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--trans-fast) ease;
+}
+
+.provider-btn.active {
+  background: var(--accent-gradient);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.return-stream-btn {
+  background: rgba(99, 102, 241, 0.15) !important;
+  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  color: #c7d2fe !important;
+}
+
+.return-stream-btn:focus {
+  background: rgba(99, 102, 241, 0.35) !important;
+  box-shadow: 0 0 0 3px #818cf8 !important;
+}
+

@@ -47,8 +47,10 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     this.bindSpoilerModalEvents();
     this.bindSettingsEvents();
     this.bindAdminEvents();
+    this.bindProviderEvents();
 
     // Check backend health & fetch titles
+
     await this.checkBackendStatus();
     await this.loadCatalog();
 
@@ -750,6 +752,38 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     }, 3500);
   }
 
+  bindProviderEvents() {
+    this.activeProvider = 'netflix';
+    const providerButtons = document.querySelectorAll('.provider-btn');
+    providerButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        providerButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.activeProvider = btn.getAttribute('data-provider') || 'netflix';
+        const providerName = btn.textContent.trim();
+        const compProviderEl = document.getElementById('comp-provider-val');
+        if (compProviderEl) compProviderEl.textContent = providerName;
+        const hdrMovieEl = document.getElementById('hdr-movie-title');
+        if (hdrMovieEl && this.activeMovie) {
+          hdrMovieEl.textContent = `[${providerName}] ${this.activeMovie.display_title || this.activeMovie.title}`;
+        }
+        this.showToast(`Switched active streaming app to ${providerName}`);
+      });
+    });
+
+    const returnBtn = document.getElementById('comp-btn-return-stream');
+    if (returnBtn) {
+      returnBtn.addEventListener('click', () => {
+        this.simulateReturnToStream();
+      });
+    }
+  }
+
+  simulateReturnToStream() {
+    const providerName = document.querySelector('.provider-btn.active')?.textContent.trim() || 'Streaming App';
+    this.showToast(`Returning to ${providerName}... Rewind overlay dismissed.`);
+  }
+
   escapeHtml(str) {
     if (!str) return '';
     return str
@@ -760,6 +794,7 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       .replace(/'/g, '&#039;');
   }
 }
+
 
 // Global App instance
 window.TvApp = new RewindTvApp();

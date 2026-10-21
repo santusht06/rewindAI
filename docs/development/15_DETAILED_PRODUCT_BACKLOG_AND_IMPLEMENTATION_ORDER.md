@@ -432,6 +432,14 @@ A passing compile alone is not sufficient. A mocked test is not evidence that a 
 | DEMO-005 | S7 Adversarial Spoiler Gate & Safe Modal | P0 | DEMO-001 | `DONE` | Verified in test_tv_platform_demo.py | pending | Complete |
 | DEMO-006 | S8/S9 Operations & Revocation Flow | P0 | DEMO-001 | `DONE` | Verified in test_tv_platform_demo.py | pending | Complete |
 | DEMO-007 | Automated Demo Journey Test Suite | P0 | DEMO-001..006 | `DONE` | 5/5 passed in test_tv_platform_demo.py | pending | Complete |
+| XAPP-001 | Record ADR-006 Cross-App Model | P0 | E0 | `DONE` | ADR-006 in DECISIONS.md | pending | Complete |
+| XAPP-002 | Platform Feasibility Matrix | P0 | XAPP-001 | `DONE` | PLATFORM_CAPABILITY_AND_EVIDENCE_MATRIX.md | pending | Complete |
+| XAPP-003 | Provider Registry & Contracts | P0 | XAPP-001 | `DONE` | services/api/assistant/contracts.py & registry.py | pending | Complete |
+| XAPP-004 | Playback Context Adapters | P0 | XAPP-003 | `DONE` | services/api/assistant/adapters.py | pending | Complete |
+| XAPP-005 | Assistant Endpoints (/providers, /context) | P0 | XAPP-003 | `DONE` | services/api/api/v1/assistant.py | pending | Complete |
+| XAPP-006 | TV Client Cross-App UI & Provider Bar | P0 | XAPP-005 | `DONE` | apps/tv-client/index.html & app.js | pending | Complete |
+| XAPP-007 | Cross-App Automated Regression Suite | P0 | XAPP-003..006 | `DONE` | 6/6 passed in test_cross_app_assistant.py | pending | Complete |
+
 
 
 The live status table must be expanded to include every leaf task in the actual implementation backlog. Do not leave a task marked `NOT_STARTED` if work has begun; do not change it to `DONE` without evidence.

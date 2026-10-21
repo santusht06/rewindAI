@@ -202,10 +202,22 @@
 | `DEMO-006` | Record build, launch, and target-environment test evidence | P0 | PLAT-004 | `VERIFIED` | `tests/test_tv_platform_demo.py` (5/5 tests passing) | Pending |
 | `DEMO-007` | Complete final demo rehearsal and list limitations | P0 | DEMO-001..006 | `VERIFIED` | Full 5-min rehearsal guide documented with limitations | Pending |
 
+### Epic E14: Cross-App AI Viewing Assistant & Provider Neutrality (17_REWIND_CROSS_APP_ASSISTANT)
+| Task ID | Description | Priority | Dependencies | Status | Evidence / Notes | Commit |
+|---|---|---|---|---|---|---|
+| `XAPP-001` | Record ADR-006: Cross-App Assistant interaction model | P0 | E0 | `VERIFIED` | ADR-006 in `docs/development/DECISIONS.md` | Pending |
+| `XAPP-002` | Platform Capability and Evidence Matrix publication | P0 | XAPP-001 | `VERIFIED` | `docs/development/PLATFORM_CAPABILITY_AND_EVIDENCE_MATRIX.md` | Pending |
+| `XAPP-003` | Provider-neutral contracts & registry architecture | P0 | XAPP-001 | `VERIFIED` | `services/api/assistant/contracts.py` & `registry.py` | Pending |
+| `XAPP-004` | Playback context adapters and anti-spoofing provenance | P0 | XAPP-003 | `VERIFIED` | `services/api/assistant/adapters.py` | Pending |
+| `XAPP-005` | Assistant REST endpoints (`/providers`, `/modes`, `/context`) | P0 | XAPP-003 | `VERIFIED` | `services/api/api/v1/assistant.py` | Pending |
+| `XAPP-006` | TV client cross-app positioning, provider pills & return button | P0 | XAPP-005 | `VERIFIED` | `apps/tv-client/index.html`, `app.js`, `style.css` | Pending |
+| `XAPP-007` | Automated regression test suite for cross-app capabilities | P0 | XAPP-003..006 | `VERIFIED` | `tests/test_cross_app_assistant.py` (6/6 tests passing) | Pending |
+
 ---
 
 ## 3. Remote Publication Status
 **Remote Push Policy:** Strictly prohibited without explicit user authorization.  
 **Authorization Event:** Explicit user authorization granted on 2026-10-18 (`push to git`).  
-**Current State:** Branch `main` successfully pushed to `origin/main` (`https://github.com/santusht06/rewindAI.git`).  
-**Remote Sync Status:** **SYNCHRONIZED & UP TO DATE**.
+**Current State:** Branch `main` local commits pending publication.  
+**Automated Tests:** **73 passed in 1.45s** across 13 test suites.
+

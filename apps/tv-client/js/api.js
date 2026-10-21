@@ -172,7 +172,32 @@ class RewindApiClient {
     const res = await fetch(healthUrl);
     return res.json();
   }
+
+  // Cross-App Assistant & Provider Registry
+  async getAssistantProviders() {
+    return this._request('/assistant/providers');
+  }
+
+  async getAssistantModes() {
+    return this._request('/assistant/modes');
+  }
+
+  async getAssistantContext(sessionId) {
+    return this._request(`/assistant/sessions/${encodeURIComponent(sessionId)}/context`);
+  }
+
+  async updateAssistantContext(sessionId, providerId, positionSeconds, source = 'manual_slider') {
+    return this._request(`/assistant/sessions/${encodeURIComponent(sessionId)}/context`, {
+      method: 'POST',
+      body: JSON.stringify({
+        provider_id: providerId,
+        position_seconds: positionSeconds,
+        source: source,
+      }),
+    });
+  }
 }
+
 
 // Global API instance
 window.RewindApi = new RewindApiClient();

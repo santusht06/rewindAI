@@ -832,6 +832,219 @@
         }
       }
     },
+    "/api/v1/assistant/providers": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "List Streaming Providers & Capabilities",
+        "description": "Return all supported third-party streaming providers with their verified capabilities.\n\nAdheres to requirement 17: Transparently records which capabilities are VERIFIED,\nPARTIAL, or UNAVAILABLE due to OS container sandboxing.",
+        "operationId": "list_streaming_providers_api_v1_assistant_providers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/providers/{provider_id}": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Get Provider Capability Details",
+        "description": "Retrieve capability status, sandbox notes, and approved fallbacks for a specific provider.",
+        "operationId": "get_provider_details_api_v1_assistant_providers__provider_id__get",
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreamingProviderInfo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/modes": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Get Presentation & Invocation Modes",
+        "description": "Return presentation modes (Side Panel, Modal Overlay, Companion Device) available on Fire TV & Vega OS.",
+        "operationId": "get_presentation_modes_api_v1_assistant_modes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresentationModesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/sessions/{session_id}/context": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Get Active Assistant Playback Context",
+        "description": "Resolve current playback context and provenance for an active assistant session.",
+        "operationId": "get_session_context_api_v1_assistant_sessions__session_id__context_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaybackContext"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Update Assistant Playback Context",
+        "description": "Update playback context from a specific streaming provider with provenance tracking.",
+        "operationId": "update_session_context_api_v1_assistant_sessions__session_id__context_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveContextRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaybackContext"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/titles/{title_id}/ingest": {
       "post": {
         "tags": [
@@ -1104,6 +1317,28 @@
   },
   "components": {
     "schemas": {
+      "AssistantEntryPoint": {
+        "type": "string",
+        "enum": [
+          "VOICE_COMMAND",
+          "REMOTE_SHORTCUT",
+          "COMPANION_PAIRED",
+          "MANUAL_LAUNCHER"
+        ],
+        "title": "AssistantEntryPoint",
+        "description": "Supported invocation channels for invoking the assistant."
+      },
+      "AssistantPresentationMode": {
+        "type": "string",
+        "enum": [
+          "SIDE_PANEL_OVERLAY",
+          "MODAL_OVERLAY",
+          "FOREGROUND_COMPANION",
+          "COMPANION_DEVICE"
+        ],
+        "title": "AssistantPresentationMode",
+        "description": "Supported ways the assistant UI can be presented to the viewer."
+      },
       "CharacterCardSchema": {
         "properties": {
           "character_name": {
@@ -1387,6 +1622,99 @@
         ],
         "title": "MovieStatus"
       },
+      "PlaybackContext": {
+        "properties": {
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id",
+            "description": "Active streaming provider (e.g. netflix, prime_video)"
+          },
+          "title_id": {
+            "type": "string",
+            "title": "Title Id",
+            "description": "Canonical title identifier"
+          },
+          "display_title": {
+            "type": "string",
+            "title": "Display Title",
+            "description": "Title display name"
+          },
+          "current_position_seconds": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Current Position Seconds",
+            "description": "Playback timestamp in seconds"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Duration Seconds",
+            "description": "Total movie/episode duration"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "description": "Spoken dialogue language",
+            "default": "en"
+          },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified",
+            "description": "True only if cryptographically verified or partner-authenticated",
+            "default": false
+          },
+          "provenance_note": {
+            "type": "string",
+            "title": "Provenance Note",
+            "description": "Auditable explanation of how timestamp was established",
+            "default": "Manual timestamp confirmation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "title_id",
+          "display_title",
+          "current_position_seconds",
+          "duration_seconds"
+        ],
+        "title": "PlaybackContext",
+        "description": "Normalized playback context supplied to the AI orchestrator."
+      },
+      "PresentationModesResponse": {
+        "properties": {
+          "target_os": {
+            "type": "string",
+            "title": "Target Os",
+            "default": "Dual-Target (Fire OS & Vega OS)"
+          },
+          "supported_modes": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantPresentationMode"
+            },
+            "type": "array",
+            "title": "Supported Modes"
+          },
+          "supported_entry_points": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantEntryPoint"
+            },
+            "type": "array",
+            "title": "Supported Entry Points"
+          },
+          "default_mode": {
+            "$ref": "#/components/schemas/AssistantPresentationMode",
+            "default": "SIDE_PANEL_OVERLAY"
+          }
+        },
+        "type": "object",
+        "required": [
+          "supported_modes",
+          "supported_entry_points"
+        ],
+        "title": "PresentationModesResponse",
+        "description": "Supported presentation surfaces and invocation entry points on target platform."
+      },
       "ProgressResponse": {
         "properties": {
           "session_id": {
@@ -1436,6 +1764,39 @@
           "unknown"
         ],
         "title": "ProgressSource"
+      },
+      "ProviderCapabilityStatus": {
+        "type": "string",
+        "enum": [
+          "VERIFIED",
+          "PARTIAL",
+          "UNAVAILABLE",
+          "NOT_TESTED"
+        ],
+        "title": "ProviderCapabilityStatus",
+        "description": "Empirical status of a specific provider capability on target OS."
+      },
+      "ProviderListResponse": {
+        "properties": {
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/StreamingProviderInfo"
+            },
+            "type": "array",
+            "title": "Providers"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "providers",
+          "total"
+        ],
+        "title": "ProviderListResponse",
+        "description": "List of registered streaming providers and verified capabilities."
       },
       "QuestionRequest": {
         "properties": {
@@ -1554,6 +1915,32 @@
         "title": "QuestionResponse",
         "description": "Typed Q&A response contract per 04_API_CONTRACT."
       },
+      "ResolveContextRequest": {
+        "properties": {
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id",
+            "description": "Target streaming provider (e.g. netflix, prime_video)"
+          },
+          "position_seconds": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Position Seconds",
+            "description": "Active playback position in seconds"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ProgressSource",
+            "default": "manual_slider"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "position_seconds"
+        ],
+        "title": "ResolveContextRequest",
+        "description": "Request to bind or update assistant playback context for a streaming session."
+      },
       "SessionResponse": {
         "properties": {
           "session_id": {
@@ -1655,6 +2042,59 @@
           "full"
         ],
         "title": "SpoilerMode"
+      },
+      "StreamingProviderInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique slug for the provider (e.g. netflix, prime_video)"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Human-readable display name"
+          },
+          "context_sync_status": {
+            "$ref": "#/components/schemas/ProviderCapabilityStatus",
+            "description": "Ability to automatically read playback position without manual input"
+          },
+          "evidence_status": {
+            "$ref": "#/components/schemas/ProviderCapabilityStatus",
+            "description": "Availability of authorized transcripts and metadata"
+          },
+          "supported_presentation_modes": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantPresentationMode"
+            },
+            "type": "array",
+            "title": "Supported Presentation Modes",
+            "description": "Presentation surfaces compatible with this provider"
+          },
+          "supported_entry_points": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantEntryPoint"
+            },
+            "type": "array",
+            "title": "Supported Entry Points",
+            "description": "Invocation mechanisms supported on target devices"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes",
+            "description": "Platform sandbox or limitation notes",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "context_sync_status",
+          "evidence_status"
+        ],
+        "title": "StreamingProviderInfo",
+        "description": "Metadata and verified capabilities for a third-party streaming service."
       },
       "SubtitleLineSchema": {
         "properties": {

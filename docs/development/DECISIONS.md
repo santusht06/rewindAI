@@ -86,6 +86,35 @@ The ADR records the intended dual-target design, not certification or verified p
 
 ---
 
+## ADR-006: Cross-App AI Viewing Assistant Interaction Model and Feasibility Fallback Architecture
+
+- **Status:** APPROVED
+- **Date:** 2026-10-21
+- **Reference:** `17_REWIND_CROSS_APP_ASSISTANT_PRODUCT_REQUIREMENT.md`
+- **Context:** Rewind must operate as a cross-application AI viewing assistant (inspired by Google Gemini / Google Assistant overlay patterns) rather than an OTT video player, streaming catalog, or video hosting platform. The user continues watching content in their existing streaming app (e.g., Netflix, Amazon Prime Video, Disney+, YouTube). Rewind is invoked to understand plot, dialogue, characters, and scene context without moving content into a Rewind-owned player.
+- **Critical Feasibility Realities:**
+  - Modern TV operating systems (Fire OS / Android AOSP and Vega OS Linux) strictly sandbox third-party applications.
+  - An ordinary third-party TV app **cannot** draw floating overlays over protected DRM video surfaces (Widevine L1), read active package/window state, inspect video frames, or tap into another app's internal playback position or subtitle stream without system-level platform privileges.
+  - Screen scraping, accessibility service abuse, and hidden private APIs are explicitly prohibited by app-store guidelines, DRM security policies, and architectural boundaries.
+- **Alternatives Evaluated:**
+  1. *Standalone OTT Streaming Player (Rejected):* Building a custom video player and content catalog where movies are uploaded and played. Directly rejected by product requirements; Rewind is not an OTT service.
+  2. *Unverified "Magic" Overlay via Unsupported Hacks (Rejected):* Attempting accessibility or window manager abuse to draw over Netflix. Brittle, breaks DRM, violates platform security, and fails completely on Vega OS.
+  3. *Provider-Neutral Modular Assistant Architecture with Honest Fallback Hierarchy (Selected):*
+     - Decouple the assistant from any specific streaming service using abstract contracts: `PlaybackContextProvider`, `AssistantEntryPoint`, `AssistantPresentationAdapter`, `ContentEvidenceProvider`, and `ProviderCapabilityRegistry`.
+     - Implement an explicit **Fallback Hierarchy**:
+       1. System assistant / app-to-app integration (where authorized and supported).
+       2. Foreground assistant surface with seamless resume to previous app.
+       3. Companion device/web assistant paired to TV session with confirmed playback timestamp.
+       4. Provider-specific integration (where officially supported by provider APIs).
+     - Label all provider capabilities transparently as `VERIFIED`, `PARTIAL`, `UNAVAILABLE`, or `NOT_TESTED`.
+- **Decision:** Adopt the **Provider-Neutral Modular Assistant Architecture with Honest Fallback Hierarchy**.
+- **Consequences:**
+  - The TV client is structured as an assistant shell / companion side panel, not a movie playback destination.
+  - Adding a new streaming provider requires only implementing the provider adapter, without modifying core RAG, spoiler controls, or AI orchestration.
+  - When automatic playback synchronization is unavailable due to OS sandboxing, the assistant transparently prompts the user for manual timestamp confirmation, maintaining 100% spoiler safety.
+
+---
+
 # 2. Priority Category-Fit Statement (Challenge Alignment)
 
 **Document Reference:** `16_FIRE_TV_VEGA_OS_DEMO_CORE_REQUIREMENT.md`  

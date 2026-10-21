@@ -363,8 +363,43 @@
 - **Verification Commands Executed:**
   - `.venv/bin/pytest -v`: **55 passed in 1.15s** across 11 test suites
   - `python ops/scripts/package_tv_app.py`: Generated valid TV package in `dist/rewind-firetv-vega-app.zip`
+- **Commit:** `05bf827` (`feat(platform-demo): implement Fire TV & Vega OS dual-target packaging, ADR-005, and 5-minute live demo suite`)
+- **Remote Push:** Pushed to `origin/main`.
+
+---
+
+## 2026-10-21 — Phase 6: Cross-App AI Viewing Assistant Architecture & Platform Feasibility Matrix (Epic E14)
+
+- **Goal:** Implement corrected product requirements from `17_REWIND_CROSS_APP_ASSISTANT_PRODUCT_REQUIREMENT.md`: establish Rewind as a cross-application AI viewing assistant (not an OTT video player/catalog), publish empirical platform feasibility matrix, implement provider-neutral contracts and registry, update TV client positioning and provider switching, and implement automated regression coverage.
+- **Actions Taken:**
+  1. **Architecture Decision Record (ADR-006 in `docs/development/DECISIONS.md`):**
+     - Formally defined Rewind as a cross-application AI viewing assistant paired with external streaming apps (Netflix, Prime Video, Disney+, YouTube).
+     - Explicit non-goals confirmed: no video hosting, no OTT subscription service, no media player replacement.
+     - Documented platform sandbox boundaries and established the 4-level fallback hierarchy (system assistant -> foreground assistant with back-to-app resumption -> paired companion -> provider API).
+  2. **Platform Capability and Evidence Matrix (`docs/development/PLATFORM_CAPABILITY_AND_EVIDENCE_MATRIX.md`):**
+     - Published thorough empirical matrix covering 7 capabilities across Fire OS 7/8, Vega OS, and streaming providers with official documentation citations, sandbox limitations, and approved fallbacks.
+  3. **Provider-Neutral Assistant Architecture (`services/api/assistant/`):**
+     - Created `contracts.py`: `ProviderCapabilityStatus`, `AssistantPresentationMode`, `AssistantEntryPoint`, `StreamingProviderInfo`, `PlaybackContext`, and protocols `PlaybackContextProvider`, `ContentEvidenceProvider`, `AssistantPresentationAdapter`.
+     - Created `registry.py`: `ProviderCapabilityRegistry` tracking Netflix, Prime Video, Disney+, YouTube, and Simulator with empirical statuses.
+     - Created `adapters.py`: `StandardPlaybackContextAdapter` resolving playback state with anti-spoofing provenance.
+  4. **Assistant API Routers (`services/api/api/v1/assistant.py`):**
+     - Mounted `GET /api/v1/assistant/providers`: list registered streaming services with capability statuses (`UNAVAILABLE`, `PARTIAL`, `VERIFIED`).
+     - Mounted `GET /api/v1/assistant/providers/{id}`: single provider capability lookup.
+     - Mounted `GET /api/v1/assistant/modes`: target platform presentation and entry point options.
+     - Mounted `GET /api/v1/assistant/sessions/{id}/context` & `POST /api/v1/assistant/sessions/{id}/context`: get and update playback context with provider switching and honest provenance reporting.
+  5. **TV Client UI Refinements (`apps/tv-client/`):**
+     - Reframed Screens S1, S2, and S4 to emphasize cross-app companion positioning rather than a standalone movie catalog.
+     - Added streaming provider switcher bar in Screen S2 allowing viewers to toggle between Netflix, Prime Video, Disney+, YouTube, and Test Simulator.
+     - Added streaming provider badge and "← Return to Stream" action with `[Back / Esc]` simulation in Screen S4.
+     - Added helper methods in `api.js` and `app.js` with styled CSS components.
+  6. **Automated Test Suite (`tests/test_cross_app_assistant.py`):**
+     - Verified registry defaults, provider list, provider details, presentation modes, cross-provider context switching, and 403 cross-user isolation (6/6 tests passing).
+- **Verification Commands Executed:**
+  - `.venv/bin/pytest -v`: **73 passed in 1.45s** across 13 test suites (100% pass rate).
+  - `PYTHONPATH=. .venv/bin/python ops/scripts/export_openapi.py`: Generated updated `docs/api/openapi.json`.
 - **Commit:** Pending.
-- **Remote Push:** Scheduled upon commit.
+- **Remote Push:** Awaiting user instruction per remote push policy.
+
 
 
 

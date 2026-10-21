@@ -71,11 +71,11 @@
           <div class="inner-core welcome-inner">
             <div class="welcome-hero-badge">
               <span class="badge-dot"></span>
-              <span>10-FT FIRE TV EDITION</span>
+              <span>CROSS-APP AI ASSISTANT • FIRE TV &amp; VEGA OS</span>
             </div>
             <h1 class="screen-title" id="welcome-title">Never Wonder What Happened Again</h1>
             <p class="welcome-copy">
-              Rewind is your intelligent Fire TV companion for films and series. Ask questions about dialogue, characters, and plot points at any second without ever risking future spoilers.
+              Rewind is a cross-application AI viewing assistant for Fire TV &amp; Vega OS. Keep watching in Netflix, Prime Video, or Disney+—invoke Rewind anytime to ask about dialogue, characters, and plot points without moving your content or risking future spoilers.
             </p>
             
             <div class="welcome-features-grid">
@@ -97,18 +97,18 @@
                 <div class="feature-icon-box">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                 </div>
-                <h3>D-Pad Remote First</h3>
-                <p>Optimized for effortless viewing distance navigation.</p>
+                <h3>Cross-App Companion</h3>
+                <p>Pairs with Netflix, Prime Video, or Disney+ with instant return.</p>
               </div>
             </div>
 
             <div class="welcome-actions">
               <button class="tv-btn tv-btn-primary tv-focusable" id="btn-welcome-start" data-screen="s2-catalog" tabindex="0">
-                <span>Browse Title Catalog</span>
+                <span>Launch Assistant Companion</span>
                 <span class="btn-icon-circle">→</span>
               </button>
               <button class="tv-btn tv-btn-secondary tv-focusable" id="btn-welcome-privacy" data-screen="s8-settings" tabindex="0">
-                <span>Privacy & Retention Notice</span>
+                <span>Privacy &amp; Retention Notice</span>
               </button>
             </div>
           </div>
@@ -116,17 +116,29 @@
       </section>
 
       <!-- ============================================== -->
-      <!-- SCREEN 2 (S2): Title Catalog Browsing          -->
+      <!-- SCREEN 2 (S2): Streaming App & Title Setup     -->
       <!-- ============================================== -->
       <section class="tv-screen active" id="s2-catalog" role="region" aria-labelledby="catalog-title">
         <div class="section-header">
           <div>
-            <span class="section-eyebrow">SUPPORTED REWIND TITLES</span>
-            <h2 class="section-heading" id="catalog-title">Choose What You're Watching</h2>
+            <span class="section-eyebrow">CROSS-APPLICATION ASSISTANT SETUP</span>
+            <h2 class="section-heading" id="catalog-title">Choose Your Streaming Service &amp; Title</h2>
+            <p class="section-description">Rewind pairs with the content you watch in other apps. Select your active streaming service and title to sync story context.</p>
           </div>
           <div class="catalog-filters">
-            <span class="filter-badge active">All Titles</span>
-            <span class="filter-badge">Questions Ready</span>
+            <span class="filter-badge active">All Supported</span>
+            <span class="filter-badge">Netflix &amp; Prime</span>
+          </div>
+        </div>
+
+        <div class="provider-switch-bar">
+          <span class="provider-switch-title">Active Streaming App:</span>
+          <div class="provider-pills" id="provider-pill-group">
+            <button class="provider-btn tv-focusable active" data-provider="netflix" tabindex="0">Netflix</button>
+            <button class="provider-btn tv-focusable" data-provider="prime_video" tabindex="0">Prime Video</button>
+            <button class="provider-btn tv-focusable" data-provider="disney_plus" tabindex="0">Disney+</button>
+            <button class="provider-btn tv-focusable" data-provider="youtube" tabindex="0">YouTube</button>
+            <button class="provider-btn tv-focusable" data-provider="simulator" tabindex="0">Test Simulator</button>
           </div>
         </div>
 
@@ -138,6 +150,7 @@
           </div>
         </div>
       </section>
+
 
       <!-- ============================================== -->
       <!-- SCREEN 3 (S3): Title Details & Progress Setup  -->
@@ -222,7 +235,12 @@
                 <span class="ctx-label">SPOILER POLICY</span>
                 <span class="ctx-val spoiler-badge safe" id="comp-spoiler-badge">🛡️ SAFE (Protected)</span>
               </div>
+              <div class="context-item">
+                <span class="ctx-label">STREAMING SERVICE</span>
+                <span class="ctx-val" id="comp-provider-val">Netflix</span>
+              </div>
               <div class="context-item actions">
+                <button class="mini-btn tv-focusable return-stream-btn" id="comp-btn-return-stream" tabindex="0">← Return to Stream</button>
                 <button class="mini-btn tv-focusable" id="comp-btn-adjust-time" tabindex="0">Adjust Time</button>
                 <button class="mini-btn tv-focusable" id="comp-btn-toggle-safe" tabindex="0">Toggle Mode</button>
               </div>
