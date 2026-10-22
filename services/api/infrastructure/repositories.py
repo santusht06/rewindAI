@@ -15,7 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.api.domain.models import (
     AuditAction,
     ContentProcessingStatus,
+    MediaAssetStatus,
+    MediaAssetType,
     MovieStatus,
+    ProcessingJobStage,
     ProgressSource,
     QuestionStatus,
     SpoilerMode,
@@ -25,7 +28,9 @@ from services.api.infrastructure.tables import (
     AnswerSourceTable,
     AuditEventTable,
     ContentVersionTable,
+    MediaAssetTable,
     MovieTable,
+    ProcessingJobTable,
     QuestionTable,
     StoryFactTable,
     SubtitleChunkTable,
@@ -33,6 +38,7 @@ from services.api.infrastructure.tables import (
     ViewingSessionTable,
 )
 from services.api.ingestion.parser import SubtitleCue
+
 
 
 class MovieRepository:
@@ -668,3 +674,154 @@ class AuditEventRepository:
         stmt = stmt.order_by(AuditEventTable.created_at.desc()).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+
+class MediaAssetRepository:
+    """Repository for managing media binary assets (videos, streams, audio)."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create(
+        self,
+        movie_id: str,
+        asset_type: MediaAssetType | str,
+        storage_path: str,
+        stream_url: str | None = None,
+        duration_seconds: float | None = None,
+        file_size_bytes: int | None = None,
+        codec: str | None = None,
+        status: MediaAssetStatus | str = MediaAssetStatus.PENDING,
+        asset_id: str | None = None,
+    ) -> MediaAssetTable:
+        type_val = asset_type.value if hasattr(asset_type, "value") else str(asset_type)
+        status_val = status.value if hasattr(status, "value") else str(status)
+        asset = MediaAssetTable(
+            id=asset_id or str(uuid.uuid4()),
+            movie_id=movie_id,
+            asset_type=type_val,
+            storage_path=storage_path,
+            stream_url=stream_url,
+            duration_seconds=duration_seconds,
+            file_size_bytes=file_size_bytes,
+            codec=codec,
+            status=status_val,
+        )
+        self.session.add(asset)
+        await self.session.flush()
+        return asset
+
+    async def get_by_id(self, asset_id: str) -> MediaAssetTable | None:
+        stmt = select(MediaAssetTable).where(MediaAssetTable.id == asset_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
+    async def list_by_movie(self, movie_id: str) -> list[MediaAssetTable]:
+        stmt = (
+            select(MediaAssetTable)
+            .where(MediaAssetTable.movie_id == movie_id)
+            .order_by(MediaAssetTable.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def update_status(
+        self,
+        asset_id: str,
+        status: MediaAssetStatus | str,
+        stream_url: str | None = None,
+        duration_seconds: float | None = None,
+        codec: str | None = None,
+    ) -> MediaAssetTable:
+        asset = await self.get_by_id(asset_id)
+        if not asset:
+            raise NotFoundError(f"MediaAsset {asset_id} not found")
+        asset.status = status.value if hasattr(status, "value") else str(status)
+        if stream_url is not None:
+            asset.stream_url = stream_url
+        if duration_seconds is not None:
+            asset.duration_seconds = duration_seconds
+        if codec is not None:
+            asset.codec = codec
+        await self.session.flush()
+        return asset
+
+
+class ProcessingJobRepository:
+    """Repository for tracking asynchronous media processing workflows."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create(
+        self,
+        movie_id: str,
+        stage: ProcessingJobStage | str = ProcessingJobStage.UPLOADED,
+        job_id: str | None = None,
+        max_attempts: int = 3,
+    ) -> ProcessingJobTable:
+        stage_val = stage.value if hasattr(stage, "value") else str(stage)
+        job = ProcessingJobTable(
+            id=job_id or str(uuid.uuid4()),
+            movie_id=movie_id,
+            stage=stage_val,
+            attempts=0,
+            max_attempts=max_attempts,
+            is_retryable=True,
+            is_playback_ready=False,
+            is_ai_ready=False,
+        )
+        self.session.add(job)
+        await self.session.flush()
+        return job
+
+    async def get_by_id(self, job_id: str) -> ProcessingJobTable | None:
+        stmt = select(ProcessingJobTable).where(ProcessingJobTable.id == job_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
+    async def get_latest_for_movie(self, movie_id: str) -> ProcessingJobTable | None:
+        stmt = (
+            select(ProcessingJobTable)
+            .where(ProcessingJobTable.movie_id == movie_id)
+            .order_by(ProcessingJobTable.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
+    async def update_stage(
+        self,
+        job_id: str,
+        stage: ProcessingJobStage | str,
+        is_playback_ready: bool | None = None,
+        is_ai_ready: bool | None = None,
+    ) -> ProcessingJobTable:
+        job = await self.get_by_id(job_id)
+        if not job:
+            raise NotFoundError(f"ProcessingJob {job_id} not found")
+        job.stage = stage.value if hasattr(stage, "value") else str(stage)
+        if is_playback_ready is not None:
+            job.is_playback_ready = is_playback_ready
+        if is_ai_ready is not None:
+            job.is_ai_ready = is_ai_ready
+        await self.session.flush()
+        return job
+
+    async def mark_failed(
+        self,
+        job_id: str,
+        error_code: str,
+        error_message: str,
+        is_retryable: bool = True,
+    ) -> ProcessingJobTable:
+        job = await self.get_by_id(job_id)
+        if not job:
+            raise NotFoundError(f"ProcessingJob {job_id} not found")
+        job.stage = ProcessingJobStage.FAILED.value
+        job.error_code = error_code
+        job.error_message = error_message
+        job.is_retryable = is_retryable
+        job.attempts += 1
+        await self.session.flush()
+        return job
+

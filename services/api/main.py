@@ -147,7 +147,14 @@ def create_app() -> FastAPI:
         async def root_redirect() -> RedirectResponse:
             return RedirectResponse(url="/tv/")
 
+    # 8. Mount Media Assets for Video Playback (REWIND-REQ-018)
+    from services.api.media.storage import LocalStorageProvider, get_media_storage
+    storage = get_media_storage()
+    if isinstance(storage, LocalStorageProvider) and storage.base_dir.exists():
+        app.mount("/media", StaticFiles(directory=str(storage.base_dir)), name="media-assets")
+
     return app
+
 
 
 

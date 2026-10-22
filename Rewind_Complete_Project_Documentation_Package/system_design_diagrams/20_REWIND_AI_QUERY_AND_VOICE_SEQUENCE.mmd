@@ -1,0 +1,27 @@
+sequenceDiagram
+  actor Viewer
+  participant UI as Rewind UI
+  participant API as FastAPI
+  participant STT as STT Provider
+  participant RET as Retrieval
+  participant DB as PostgreSQL + pgvector
+  participant LLM as LLM Provider
+  participant TTS as TTS Provider
+  Viewer->>UI: Push to talk
+  UI->>API: Audio + movie ID + playback position + spoiler mode
+  API->>STT: Transcribe audio
+  STT-->>API: Recognized question
+  API->>RET: Query + movie scope + time boundary
+  RET->>DB: Hybrid search with filters
+  DB-->>RET: Timestamped candidate chunks
+  RET->>RET: Filter, rank, deduplicate
+  RET-->>API: Bounded evidence
+  API->>LLM: Question + policy + evidence
+  LLM-->>API: Answer + evidence references
+  API->>API: Validate evidence and uncertainty
+  opt TTS enabled
+    API->>TTS: Synthesize validated answer
+    TTS-->>API: Audio
+  end
+  API-->>UI: Answer + citations + optional audio
+  UI-->>Viewer: Show/speak answer; allow resume playback

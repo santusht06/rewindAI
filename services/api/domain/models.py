@@ -40,6 +40,46 @@ class ProgressSource(str, Enum):
 class SpoilerMode(str, Enum):
     SAFE = "safe"
     FULL = "full"
+    CURRENT_POSITION_ONLY = "current_position_only"
+    ALLOW_FULL_MOVIE = "allow_full_movie"
+
+    @classmethod
+    def _missing_(cls, value: object) -> "SpoilerMode | None":
+        if isinstance(value, str):
+            val_lower = value.strip().lower()
+            if val_lower in ("safe", "current_position_only"):
+                return cls.SAFE
+            if val_lower in ("full", "allow_full_movie"):
+                return cls.FULL
+        return None
+
+
+class ProcessingJobStage(str, Enum):
+    UPLOADED = "uploaded"
+    INSPECTING = "inspecting"
+    MEDIA_PROCESSING = "media_processing"
+    TRANSCRIPT_EXTRACTING = "transcript_extracting"
+    TRANSCRIPT_NORMALIZING = "transcript_normalizing"
+    CHUNKING = "chunking"
+    EMBEDDING = "embedding"
+    INDEXING = "indexing"
+    READY = "ready"
+    FAILED = "failed"
+
+
+class MediaAssetType(str, Enum):
+    VIDEO_SOURCE = "video_source"
+    HLS_STREAM = "hls_stream"
+    AUDIO_SOURCE = "audio_source"
+    SUBTITLE_SRT = "subtitle_srt"
+    SUBTITLE_VTT = "subtitle_vtt"
+
+
+class MediaAssetStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
 
 
 class QuestionStatus(str, Enum):
@@ -85,10 +125,45 @@ class MovieSchema(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str = Field(..., min_length=1, max_length=255)
     release_year: int | None = Field(default=None, ge=1880, le=2100)
+    duration_seconds: int = Field(default=7200, ge=0)
     language: str = Field(default="en", max_length=10)
     status: MovieStatus = MovieStatus.DRAFT
+    stream_url: str | None = None
+    poster_url: str | None = None
+    is_playback_ready: bool = False
+    is_ai_ready: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MediaAssetSchema(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    movie_id: str
+    asset_type: MediaAssetType = MediaAssetType.VIDEO_SOURCE
+    storage_path: str
+    stream_url: str | None = None
+    duration_seconds: float | None = None
+    file_size_bytes: int | None = None
+    codec: str | None = None
+    status: MediaAssetStatus = MediaAssetStatus.PENDING
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ProcessingJobSchema(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    movie_id: str
+    stage: ProcessingJobStage = ProcessingJobStage.UPLOADED
+    attempts: int = Field(default=0, ge=0)
+    max_attempts: int = Field(default=3, ge=1)
+    is_retryable: bool = True
+    error_code: str | None = None
+    error_message: str | None = None
+    is_playback_ready: bool = False
+    is_ai_ready: bool = False
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
 
 
 class ContentVersionSchema(BaseModel):

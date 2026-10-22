@@ -1,21 +1,18 @@
-# Rewind — Complete Project Documentation Package
+# Rewind Complete Project Documentation Package
 
-This package consolidates the Rewind project documentation created across the planning workflow, including the latest Git/Agile delivery rules.
+This package contains product and software requirements, implementation backlog and status tracking, platform integration constraints, coding-agent rules, production PRD, and system design diagrams.
 
-## Contents
+## Critical product definition
 
-- `requirements/` — Product requirements, software requirements, architecture, domain/database model, API contract, UX/screen requirements, security/privacy/safety, testing and acceptance criteria, implementation plan, AI-agent execution rules, production engineering guardrails, code organization standards, consolidated requirements, start-here prompt, and Git/Agile delivery/release rules.
-- `production_prd/` — Production PRD in Markdown and DOCX, plus coding-agent instructions.
-- `system_design_diagrams/` — Mermaid source files for use cases, system context, architecture, ingestion, online Q&A, sequence, spoiler control, translation, database ERD, deployment, and testing.
+Rewind is a **cross-app AI viewing assistant**, not an OTT service or video player. The user continues watching in Netflix, Prime Video, or another supported streaming app and invokes Rewind through a platform/provider capability that must be verified. See `requirements/17_REWIND_CROSS_APP_ASSISTANT_PRODUCT_REQUIREMENT.md` first.
 
-## Suggested use
+## Suggested start sequence
 
-1. Read `requirements/00_README.md`.
-2. Give the coding agent `requirements/START_HERE_AGENT_PROMPT.md` and the entire `requirements/` directory as source-of-truth requirements.
-3. Read `requirements/13_GIT_WORKFLOW_AGILE_DELIVERY_AND_RELEASE_RULES.md` before implementation. It requires local commits for verified changes and prohibits pushing to any remote until the user explicitly authorizes it.
-4. Use the Mermaid files as source diagrams; render them with a Mermaid-compatible viewer when needed.
-5. Reconcile the documentation with the actual repository before coding. Do not assume that documentation alone guarantees correctness or that every external integration is available.
+1. Read `requirements/00_README.md` and all requirements.
+2. Read `requirements/17_REWIND_CROSS_APP_ASSISTANT_PRODUCT_REQUIREMENT.md`.
+3. Complete platform feasibility and repository discovery before substantial implementation.
+4. Follow `requirements/14_IMPLEMENTATION_STATUS_AND_BACKEND_FIRST_EXECUTION_PLAN.md` and `requirements/15_DETAILED_PRODUCT_BACKLOG_AND_IMPLEMENTATION_ORDER.md`.
+5. Follow Git rules in `requirements/13_GIT_WORKFLOW_AGILE_DELIVERY_AND_RELEASE_RULES.md`.
+6. Use the status template and keep all claims backed by actual verification evidence.
 
-## Documentation precedence
-
-Treat the project-specific requirements and safety rules as the baseline. If documents conflict, stop and report the exact conflict for resolution rather than silently choosing a behavior. Never expose secrets, invent unverified integrations, or claim tests passed without running them.
+The presence of a provider-neutral interface does not prove a streaming provider supports overlay, playback-position, subtitle, or active-app access. Record real capabilities and limitations in the platform capability matrix.

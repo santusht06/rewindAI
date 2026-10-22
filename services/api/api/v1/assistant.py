@@ -6,12 +6,13 @@ Implements requirements from 17_REWIND_CROSS_APP_ASSISTANT_PRODUCT_REQUIREMENT.m
 - Context resolution with explicit provenance
 """
 
-from typing import Annotated
+from typing import Annotated, Any
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.api.dependencies import get_current_user_id, get_db
+from services.api.api.schemas import CitationSchema
 from services.api.assistant.contracts import (
     AssistantEntryPoint,
     AssistantPresentationMode,
@@ -180,3 +181,112 @@ async def update_session_context(
         is_verified=False,
         provenance_note=provenance,
     )
+
+
+class VoiceQueryRequest(BaseModel):
+    """Voice query submission carrying base64 audio and optional playback position."""
+
+    session_id: str
+    audio_base64: str = Field(..., min_length=1, description="Base64 encoded audio bytes (WAV/MP3/WebM)")
+    playback_position_seconds: float | None = Field(default=None, ge=0)
+    spoiler_mode: str = Field(default="safe")
+    synthesize_speech: bool = Field(default=True)
+    client_request_id: str | None = None
+
+
+class VoiceQueryResponse(BaseModel):
+    """Result of speech recognition, spoiler-gated Q&A, and speech synthesis."""
+
+    question_id: str
+    session_id: str
+    recognized_question: str
+    outcome: str
+    answer: str
+    citations: list[CitationSchema] = Field(default_factory=list)
+    audio_base64: str | None = None
+    policy_state: str
+    created_at: str
+
+
+
+@router.post(
+    "/voice-query",
+    response_model=VoiceQueryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Submit Push-To-Talk Voice Query",
+)
+async def submit_voice_query(
+    body: VoiceQueryRequest,
+    user_id: ViewerId,
+    db: Database,
+) -> VoiceQueryResponse:
+    """End-to-end voice query: STT -> Spoiler-gated Q&A -> TTS synthesis."""
+    import base64
+    from services.api.ai.orchestrator import RagOrchestrator
+    from services.api.ai.voice import get_stt_provider, get_tts_provider
+    from services.api.errors import AppException
+
+    try:
+        audio_bytes = base64.b64decode(body.audio_base64)
+    except Exception as exc:
+        raise AppException(code="INVALID_AUDIO_BASE64", message=f"Failed to decode audio: {exc}", status_code=400)
+
+    # 1. Update playback position if supplied
+    session_repo = ViewingSessionRepository(db)
+    session = await session_repo.get_by_id(body.session_id)
+    if not session:
+        raise NotFoundError(f"Session '{body.session_id}' not found.")
+    if session.user_id != user_id:
+        raise AuthorizationError("Access denied to this viewing session.")
+
+    if body.playback_position_seconds is not None:
+        await session_repo.update_progress(
+            session_id=body.session_id,
+            position_seconds=body.playback_position_seconds,
+            source=ProgressSource.VOICE_CUE,
+        )
+
+    # 2. STT Transcription
+    stt = get_stt_provider()
+    try:
+        recognized_text = await stt.transcribe(audio_bytes)
+    except Exception as exc:
+        raise AppException(code="STT_FAILED", message=f"Speech transcription failed: {exc}", status_code=502)
+
+    if not recognized_text or not recognized_text.strip():
+        recognized_text = "What is happening right now?"
+
+    # 3. Grounded Q&A Retrieval with Server-Side Spoiler Boundaries
+    orchestrator = RagOrchestrator(db_session=db)
+    q_res = await orchestrator.answer_question(
+        session_id=body.session_id,
+        question_text=recognized_text,
+        user_id=user_id,
+        client_request_id=body.client_request_id,
+    )
+
+    # 4. Optional TTS Synthesis
+    audio_out_b64 = None
+    if body.synthesize_speech and q_res.answer:
+        tts = get_tts_provider()
+        try:
+            tts_bytes = await tts.synthesize(q_res.answer)
+            if tts_bytes:
+                audio_out_b64 = base64.b64encode(tts_bytes).decode("ascii")
+        except Exception:
+            # AT-12: TTS failure degrades gracefully; text answer remains usable
+            audio_out_b64 = None
+
+    return VoiceQueryResponse(
+        question_id=q_res.question_id,
+        session_id=q_res.session_id,
+        recognized_question=recognized_text,
+        outcome=q_res.outcome,
+        answer=q_res.answer,
+        citations=q_res.citations,
+        audio_base64=audio_out_b64,
+        policy_state=q_res.policy_state,
+        created_at=q_res.created_at.isoformat() if hasattr(q_res.created_at, "isoformat") else str(q_res.created_at),
+    )
+
+

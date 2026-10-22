@@ -41,6 +41,10 @@ class MovieTable(Base):
     duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=7200)
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft", index=True)
+    stream_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    poster_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_playback_ready: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_ai_ready: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
@@ -62,6 +66,64 @@ class MovieTable(Base):
     sessions: Mapped[list[ViewingSessionTable]] = relationship(
         "ViewingSessionTable", back_populates="movie", cascade="all, delete-orphan"
     )
+    media_assets: Mapped[list[MediaAssetTable]] = relationship(
+        "MediaAssetTable", back_populates="movie", cascade="all, delete-orphan"
+    )
+    processing_jobs: Mapped[list[ProcessingJobTable]] = relationship(
+        "ProcessingJobTable", back_populates="movie", cascade="all, delete-orphan"
+    )
+
+
+class MediaAssetTable(Base):
+    """Media asset binary reference (video, HLS stream, audio, subtitles)."""
+
+    __tablename__ = "media_assets"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    movie_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    asset_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    stream_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    duration_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
+    file_size_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    codec: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
+    )
+
+    # Relationships
+    movie: Mapped[MovieTable] = relationship("MovieTable", back_populates="media_assets")
+
+
+class ProcessingJobTable(Base):
+    """Asynchronous media processing job tracking."""
+
+    __tablename__ = "processing_jobs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    movie_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("movies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    stage: Mapped[str] = mapped_column(String(40), nullable=False, default="uploaded", index=True)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    is_retryable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    error_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_playback_ready: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_ai_ready: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
+    )
+
+    # Relationships
+    movie: Mapped[MovieTable] = relationship("MovieTable", back_populates="processing_jobs")
+
 
 
 class ContentVersionTable(Base):

@@ -238,3 +238,143 @@ async def create_character_fact(
         relationship=fact.relationship_description,
         first_known_at_seconds=int(fact.first_known_at_seconds),
     )
+
+
+class MediaUploadRequest(BaseModel):
+    file_name: str = Field(..., min_length=1, max_length=255)
+    file_base64: str = Field(..., min_length=1)
+    content_type: str = Field(default="video/mp4")
+    supplied_srt_content: str | None = None
+
+
+class MediaUploadResponse(BaseModel):
+    job_id: str
+    movie_id: str
+    stage: str
+    message: str
+
+
+class ProcessingJobResponse(BaseModel):
+    id: str
+    movie_id: str
+    stage: str
+    attempts: int
+    max_attempts: int
+    is_retryable: bool
+    is_playback_ready: bool
+    is_ai_ready: bool
+    error_code: str | None = None
+    error_message: str | None = None
+
+
+@router.post(
+    "/movies/{title_id}/media",
+    response_model=MediaUploadResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Upload Media Asset and Start Processing Job",
+)
+async def upload_movie_media(
+    title_id: str,
+    body: MediaUploadRequest,
+    admin_actor: Annotated[str, Depends(verify_admin_authorization)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> MediaUploadResponse:
+    """Upload video binary and begin asynchronous media pipeline."""
+    import base64
+    from services.api.media.pipeline import MediaPipeline
+
+    try:
+        file_bytes = base64.b64decode(body.file_base64)
+    except Exception as exc:
+        raise AppException(code="INVALID_BASE64", message=f"Failed to decode base64: {exc}", status_code=400)
+
+    pipeline = MediaPipeline(db)
+    job_id = await pipeline.create_upload_job(
+        movie_id=title_id,
+        file_name=body.file_name,
+        file_bytes=file_bytes,
+        content_type=body.content_type,
+        supplied_srt_content=body.supplied_srt_content,
+    )
+
+    # Trigger processing execution immediately
+    await pipeline.execute_job(job_id=job_id, supplied_srt_content=body.supplied_srt_content)
+
+    return MediaUploadResponse(
+        job_id=job_id,
+        movie_id=title_id,
+        stage="processing",
+        message="Media uploaded and processing initiated.",
+    )
+
+
+@router.get(
+    "/jobs/{job_id}",
+    response_model=ProcessingJobResponse,
+    summary="Get Media Processing Job Status",
+)
+async def get_processing_job_status(
+    job_id: str,
+    admin_actor: Annotated[str, Depends(verify_admin_authorization)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ProcessingJobResponse:
+    """Inspect durable media processing job status and readiness gates."""
+    from services.api.infrastructure.repositories import ProcessingJobRepository
+
+    job = await ProcessingJobRepository(db).get_by_id(job_id)
+    if not job:
+        raise NotFoundError(f"ProcessingJob '{job_id}' not found.")
+
+    return ProcessingJobResponse(
+        id=job.id,
+        movie_id=job.movie_id,
+        stage=job.stage,
+        attempts=job.attempts,
+        max_attempts=job.max_attempts,
+        is_retryable=job.is_retryable,
+        is_playback_ready=job.is_playback_ready,
+        is_ai_ready=job.is_ai_ready,
+        error_code=job.error_code,
+        error_message=job.error_message,
+    )
+
+
+@router.post(
+    "/jobs/{job_id}/retry",
+    response_model=ProcessingJobResponse,
+    summary="Retry a Failed Media Processing Job",
+)
+async def retry_processing_job(
+    job_id: str,
+    admin_actor: Annotated[str, Depends(verify_admin_authorization)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ProcessingJobResponse:
+    """Retry an existing processing job (AT-05)."""
+    from services.api.infrastructure.repositories import ProcessingJobRepository
+    from services.api.media.pipeline import MediaPipeline
+
+    job_repo = ProcessingJobRepository(db)
+    job = await job_repo.get_by_id(job_id)
+    if not job:
+        raise NotFoundError(f"ProcessingJob '{job_id}' not found.")
+    if not job.is_retryable:
+        raise AppException(code="NON_RETRYABLE_JOB", message="This job is not retryable.", status_code=400)
+
+    pipeline = MediaPipeline(db)
+    await pipeline.execute_job(job_id=job_id)
+
+    updated_job = await job_repo.get_by_id(job_id)
+    assert updated_job is not None
+    return ProcessingJobResponse(
+        id=updated_job.id,
+        movie_id=updated_job.movie_id,
+        stage=updated_job.stage,
+        attempts=updated_job.attempts,
+        max_attempts=updated_job.max_attempts,
+        is_retryable=updated_job.is_retryable,
+        is_playback_ready=updated_job.is_playback_ready,
+        is_ai_ready=updated_job.is_ai_ready,
+        error_code=updated_job.error_code,
+        error_message=updated_job.error_message,
+    )
+

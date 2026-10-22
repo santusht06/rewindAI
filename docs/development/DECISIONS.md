@@ -130,3 +130,45 @@ The ADR records the intended dual-target design, not certification or verified p
 - **Exact User-Visible Demo Feature:** The **Spatial D-Pad Remote Engine** with on-screen Remote Simulator (`apps/tv-client/js/remote.js`), electric-indigo focus rings (`#818cf8`), single-press question presets ("Explain Current Scene", "Catch Me Up", "Who is on Screen?"), and modal focus trapping.
 - **Acceptance Criteria & Verification:** The interface is 100% navigable with Arrow keys (`Up/Down/Left/Right`), `OK/Enter`, and `Back/Escape` without mouse, touch, or external hardware dependencies.
 
+---
+
+## ADR-007: Demonstration OTT Video Player Host vs. Cross-App Assistant Product Boundaries
+
+- **Status:** APPROVED
+- **Date:** 2026-10-22
+- **Reference:** `18_REWIND_OTT_DEMO_PLATFORM_REQUIREMENTS.md` & `17_REWIND_CROSS_APP_ASSISTANT_PRODUCT_REQUIREMENT.md`
+- **Context:** An end-to-end hackathon and live judge demonstration requires interactive video playback, scrubbable playback timelines, and real-time voice/text story querying. However, third-party streaming apps (Netflix, Disney+, Prime Video) on Fire TV and Vega OS run in isolated sandboxes that prevent third-party apps from reading DRM video frames or playback positions.
+- **Decision:** Implement an authorized **Demonstration OTT Video Player Host** within the client application. The demo host plays permitted public/creative-commons demonstration movies, reports real-time playback position (`current_position_seconds`) directly to the Rewind assistant, and allows viewers to ask questions at any point in the timeline.
+- **Boundary Invariant:** The OTT player host is strictly a demonstration harness. Domain services, RAG orchestration, and spoiler gates must interact exclusively through provider-neutral interfaces (`PlaybackContextProvider`, `AssistantPresentationAdapter`). The long-term product mission—assisting viewers in their existing streaming apps—remains primary.
+
+---
+
+## ADR-008: Asynchronous Media Processing Pipeline, Storage Provider & Dual Readiness Gate
+
+- **Status:** APPROVED
+- **Date:** 2026-10-22
+- **Reference:** `19_REWIND_AI_MEDIA_PIPELINE_REQUIREMENTS.md`
+- **Context:** Media ingestion involves large file uploads, stream inspection (FFprobe), packaging/transcoding (FFmpeg), subtitle/audio extraction, semantic chunking, and vector embedding. Synchronous API uploads would block connections, violate timeouts, and fail under network variance.
+- **Decision:**
+  1. **Asynchronous Job Model:** Ingestion is managed via durable `ProcessingJob` records with explicit stages: `UPLOADED` $\to$ `INSPECTING` $\to$ `MEDIA_PROCESSING` $\to$ `TRANSCRIPT_EXTRACTING` $\to$ `CHUNKING` $\to$ `INDEXING` $\to$ `READY` (or `FAILED` with retryability metadata).
+  2. **Storage Provider Strategy:** Define an abstract `MediaStorageProvider` interface. For local development, integration testing, and the current server deployment (`143.198.38.205`), implement `LocalStorageProvider` storing media assets under `/var/www/rewind/media/` or `./media/` with tokenized URLs, ready to plug into MinIO/S3 or Cloudinary.
+  3. **Dual Readiness Gate:** A title cannot be published or set to `READY` until both `is_playback_ready` (manifest/video validated) AND `is_ai_ready` (dialogue cues normalized, contextual chunks embedded, index validated) evaluate to `true`.
+
+---
+
+## ADR-009: Push-to-Talk Voice Interaction Model (STT & TTS) with Graceful Degradation
+
+- **Status:** APPROVED
+- **Date:** 2026-10-22
+- **Reference:** `20_REWIND_VOICE_ASSISTANT_AND_AGENT_IMPLEMENTATION_GUIDE.md`
+- **Context:** TV remote navigation benefits enormously from voice entry, but full-duplex open-mic streaming requires complex WebRTC infrastructure and introduces acoustic echo while movie audio is playing.
+- **Decision:** Adopt a **Push-to-Talk (PTT)** interaction model:
+  1. Viewer activates the microphone (remote shortcut, on-screen Mic button, or companion device).
+  2. Playback is paused; client enters `LISTENING` state and streams/submits audio to `/api/v1/assistant/voice-query`.
+  3. Backend STT adapter transcribes audio $\to$ client displays recognized text with retry/cancel option.
+  4. Query is executed through the existing spoiler-gated Q&A orchestrator.
+  5. If TTS is enabled, backend synthesizes speech audio $\to$ client plays audio alongside visual citations.
+  6. On dismissal, playback resumes.
+  7. If microphone permissions are denied or STT fails, the system seamlessly falls back to on-screen text and suggested question chips.
+
+

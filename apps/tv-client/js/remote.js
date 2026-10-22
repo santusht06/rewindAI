@@ -50,6 +50,15 @@ class TvRemoteNavigator {
       return;
     }
 
+    // Spacebar toggles playback / triggers AI drawer when on player screen
+    if (key === ' ' || code === 32) {
+      if (document.activeElement?.tagName !== 'INPUT' && window.TvApp?.currentScreen === 's-player') {
+        e.preventDefault();
+        window.TvApp?.handlePlayerSpaceAction();
+        return;
+      }
+    }
+
     if (key === 'ArrowUp' || code === 19) {
       e.preventDefault();
       this.navigate('up');
@@ -85,6 +94,12 @@ class TvRemoteNavigator {
     if (this.activeModal && !this.activeModal.classList.contains('hidden')) {
       container = this.activeModal;
     } else {
+      // If player AI drawer is open, trap focus inside the drawer
+      const drawer = document.getElementById('player-ai-drawer');
+      if (drawer && drawer.classList.contains('open')) {
+        return Array.from(drawer.querySelectorAll('.tv-focusable')).filter(el => this.isVisible(el));
+      }
+
       const activeScreen = document.querySelector('.tv-screen.active');
       if (activeScreen) {
         // Include header navigation buttons and active screen items
@@ -193,6 +208,13 @@ class TvRemoteNavigator {
   }
 
   handleBack() {
+    // 0. If player in-screen AI drawer is open, close it and resume playback
+    const drawer = document.getElementById('player-ai-drawer');
+    if (drawer && drawer.classList.contains('open')) {
+      window.TvApp?.closePlayerAiDrawer(true);
+      return;
+    }
+
     // 1. If modal is open, close it safely
     if (this.activeModal && !this.activeModal.classList.contains('hidden')) {
       window.TvApp?.closeModal();

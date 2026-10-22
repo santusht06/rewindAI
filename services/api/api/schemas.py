@@ -42,6 +42,8 @@ class TitleListItemSchema(BaseModel):
     availability: str = Field(default="available", description="Playback availability state")
     index_status: str = Field(default="ready", description="Safe index status: ready, indexing, or unavailable")
     has_active_index: bool = True
+    stream_url: str | None = None
+    is_playback_ready: bool = True
 
 
 class TitleListResponse(BaseModel):
@@ -62,6 +64,8 @@ class TitleDetailResponse(BaseModel):
     status: MovieStatus
     questions_available: bool = True
     supported_locales: list[str] = Field(default_factory=lambda: ["en"])
+    stream_url: str | None = None
+    is_playback_ready: bool = True
 
 
 # ==========================================

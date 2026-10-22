@@ -1,0 +1,10 @@
+flowchart TD
+  Q["Question + Movie ID + Position + Spoiler Mode"] --> V["Validate session, access, and position"] --> P{"Spoiler mode?"}
+  P -->|CURRENT_POSITION_ONLY| B["Set max permitted evidence time"]
+  P -->|ALLOW_FULL_MOVIE| F["Full movie evidence allowed"]
+  B --> H["Hybrid keyword + vector search"]
+  F --> H
+  H --> M["Filter by movie ID and permitted time range"] --> R["Optional rerank and deduplicate"] --> C["Bound context size"] --> L["LLM answer generation"] --> A["Validate answer and references"]
+  A -->|Sufficient| O["Return answer + timestamps"]
+  A -->|Insufficient| U["Abstain / clarify"]
+  M -. "Future segments must not enter model context" .-> X["Spoiler Safety Boundary"]

@@ -80,3 +80,20 @@ The backend decouples all question answering and spoiler safety from specific st
 3. **`AssistantPresentationAdapter`**: Manages presentation styles (Side Panel, Modal Overlay, Companion Device, Fullscreen).
 4. **`ContentEvidenceProvider`**: Supplies authorized, pre-indexed subtitle transcripts with cryptographic verification.
 5. **`ProviderCapabilityRegistry`**: Maintains an auditable registry of what each streaming provider supports on Fire OS and Vega OS.
+
+---
+
+## 5. Phase 0 Feasibility Audit: OTT Demo Host, Media Pipeline & Voice (REWIND-018 - 021)
+
+| Capability / Subsystem | Target Runtime / OS | Evidence & Verification Path | Result / Status | Fallback / Mitigation |
+| :--- | :--- | :--- | :--- | :--- |
+| **HTML5 / HLS Video Playback** | Fire OS (WebView) & Vega OS (Chromium) | Standard HTML5 `<video>` element with Media Source Extensions (MSE) / HLS.js | `VERIFIED` (Demo player runs smoothly in TV client viewport) | Direct MP4 stream playback if HLS segmenting is unavailable |
+| **Microphone Capture (Push-to-Talk)** | Desktop Browser & Mobile Companion Web | W3C `MediaDevices.getUserMedia({ audio: true })` and `MediaRecorder` API | `VERIFIED` | Full onscreen question chips and remote D-pad text entry |
+| **Microphone Capture (Push-to-Talk)** | Fire OS Web App Tester | Requires `RECORD_AUDIO` permission in Android Web App wrapper APK | `PARTIAL` (Requires companion web or USB microphone grant on physical device) | Companion Web PTT pairing via phone / tablet |
+| **Microphone Capture (Push-to-Talk)** | Vega OS Web Runtime | Vega OS audio capture permission specification | `NOT_TESTED` (Physical Vega OS hardware pending developer release) | Fallback to Companion Device / Onscreen Text input |
+| **Speech-to-Text (STT) Processing** | Server-side Backend | Fast async STT provider adapter (Whisper / Google Cloud STT / Gemini Audio) | `VERIFIED` (Backend audio upload endpoint `/api/v1/assistant/voice-query`) | Display recognized question for confirmation/retry |
+| **Text-to-Speech (TTS) Playback** | All Client Targets | HTML5 Web Audio / `<audio src="...">` playback of synthesized audio | `VERIFIED` | Text answer display with verbatim citation cards |
+| **Media Stream Inspection** | Server Backend | `ffprobe -v quiet -print_format json -show_format -show_streams` | `VERIFIED` on server `143.198.38.205` | Fail fast if video stream is corrupted (`AT-02`) |
+| **Subtitle Stream Extraction** | Server Backend | `ffmpeg -i input.mp4 -map 0:s:0 output.srt` | `VERIFIED` | Fallback to STT audio extraction (`AT-04`) |
+| **Media Object Storage** | Ground Era Server (`143.198.38.205`) | `LocalStorageProvider` (`/var/www/rewind/media/`) + tokenized URL route | `VERIFIED` | Abstracted `MediaStorageProvider` interface ready for MinIO/S3 |
+

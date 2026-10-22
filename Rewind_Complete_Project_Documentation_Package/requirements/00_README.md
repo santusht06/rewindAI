@@ -54,3 +54,7 @@ A task is ready when its user-visible outcome, edge cases, access rules, error b
 - No secrets, user data, or sensitive transcript text leak into logs.
 - Documentation and configuration examples are updated.
 - The agent reports exact commands and results, including skipped or failed checks. It never claims “bug-free.”
+
+## Critical product definition
+
+Rewind is a cross-app AI viewing assistant, not an OTT service. Read `17_REWIND_CROSS_APP_ASSISTANT_PRODUCT_REQUIREMENT.md` first for the authoritative product definition and platform feasibility gates.

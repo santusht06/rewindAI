@@ -1,0 +1,30 @@
+flowchart TB
+  subgraph Client["Client Layer"]
+    Admin["Admin Upload UI"] --> API
+    Viewer["React Native / Expo Viewer"] --> Player["Video Player"]
+    Viewer --> Assistant["Rewind Assistant UI"]
+  end
+  subgraph Control["FastAPI Control Plane"]
+    API["API / Auth"] --> Catalog["Catalog & Asset Metadata"]
+    API --> Playback["Playback Session Context"]
+    API --> Query["Assistant Query Orchestrator"]
+    API --> Jobs["Processing Job API"]
+  end
+  subgraph Media["Media Data Plane"]
+    Storage["MinIO or Cloudinary"] --> Worker["Background Worker"]
+    Worker --> FF["FFprobe / FFmpeg"]
+    FF --> Subs["Subtitle Extraction or STT"]
+    FF --> HLS["HLS Packaging and Validation"]
+    HLS --> Storage
+  end
+  subgraph Knowledge["AI Knowledge Layer"]
+    Subs --> Norm["Normalize Timestamped Transcript"] --> Chunk["Contextual Chunks"] --> Embed["Embedding Provider"] --> DB[("PostgreSQL + pgvector + Full Text")]
+  end
+  subgraph Runtime["Runtime AI"]
+    Query --> Ret["Hybrid Retrieval + Spoiler Filter"]
+    DB --> Ret --> LLM["LLM Provider"] --> TTS["TTS Provider"] --> Assistant
+    Assistant --> STT["STT Provider"] --> Query
+  end
+  Player --> Storage
+  Player --> Playback
+  Jobs --> Worker

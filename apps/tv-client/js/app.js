@@ -11,6 +11,12 @@ class RewindTvApp {
     this.currentSession = null;
     this.pendingSpoilerNonce = null;
     this.lastSubmittedQuestion = '';
+    this.playerSubtitles = [];
+    this.subtitlesEnabled = true;
+    this.hudIdleTimer = null;
+    this.isRecordingVoice = false;
+    this.mediaRecorder = null;
+    this.audioChunks = [];
     
     // Sample fallback script for one-click admin test ingestion
     this.sampleSrt = `1
@@ -41,6 +47,7 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     this.bindNavPills();
     this.bindCatalogEvents();
     this.bindDetailsEvents();
+    this.bindPlayerEvents();
     this.bindCompanionEvents();
     this.bindAnswerEvents();
     this.bindClarificationEvents();
@@ -50,7 +57,6 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     this.bindProviderEvents();
 
     // Check backend health & fetch titles
-
     await this.checkBackendStatus();
     await this.loadCatalog();
 
@@ -67,7 +73,9 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     navButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const targetScreen = btn.getAttribute('data-screen');
-        if (targetScreen) {
+        if (targetScreen === 's-player') {
+          this.launchMediaPlayer(this.selectedMovie, 0);
+        } else if (targetScreen) {
           this.showScreen(targetScreen);
         }
       });
@@ -76,6 +84,14 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
 
   showScreen(screenId) {
     if (this.currentScreen === screenId) return;
+
+    // Pause video playback if navigating away from player screen
+    if (this.currentScreen === 's-player' && screenId !== 's-player') {
+      const video = document.getElementById('main-video-player');
+      if (video && !video.paused) {
+        video.pause();
+      }
+    }
 
     if (this.currentScreen) {
       this.screenHistory.push(this.currentScreen);
@@ -106,6 +122,21 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
   }
 
   navigateBack() {
+    // 0. If in-screen AI drawer is open, close drawer and resume video playback
+    const drawer = document.getElementById('player-ai-drawer');
+    if (drawer && drawer.classList.contains('open')) {
+      this.closePlayerAiDrawer(true);
+      return;
+    }
+
+    // Pause video if leaving player
+    if (this.currentScreen === 's-player') {
+      const video = document.getElementById('main-video-player');
+      if (video && !video.paused) {
+        video.pause();
+      }
+    }
+
     if (this.screenHistory.length > 0) {
       const prevScreen = this.screenHistory.pop();
       const currentEl = document.getElementById(this.currentScreen);
@@ -263,9 +294,16 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       this.showScreen('s2-catalog');
     });
 
-    // Start Session Action
+    // Start Session Action (Stand-alone Companion)
     document.getElementById('btn-start-session')?.addEventListener('click', () => {
       this.startViewingSession();
+    });
+
+    // Play Movie Action (Watch Movie with In-Screen AI)
+    document.getElementById('btn-play-movie')?.addEventListener('click', () => {
+      const slider = document.getElementById('det-progress-slider');
+      const position = parseInt(slider?.value, 10) || 50;
+      this.launchMediaPlayer(this.selectedMovie, position);
     });
   }
 
@@ -295,6 +333,553 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       this.showScreen('s4-companion');
     } catch (err) {
       this.showToast(`Error starting session: ${err.message}`);
+    }
+  }
+
+  /* -------------------------------------------------------------
+     Screen: In-Screen Media Player & Zero-Switch AI Assistant Drawer
+     ------------------------------------------------------------- */
+
+  async launchMediaPlayer(movie = null, startSeconds = 0) {
+    if (!movie && !this.selectedMovie) {
+      try {
+        const res = await window.RewindApi.getTitles(20, 0);
+        const found = res?.items?.find(m => m.id === 'interstellar-epic') || res?.items?.[0];
+        if (found) this.selectedMovie = found;
+      } catch (e) {
+        console.warn('Could not auto-fetch title for player:', e);
+      }
+    } else if (movie) {
+      this.selectedMovie = movie;
+    }
+
+    const movieTitle = this.selectedMovie?.display_title || 'Interstellar (2014)';
+    const streamUrl = this.selectedMovie?.stream_url || '/media/interstellar.mp4';
+    const totalDuration = this.selectedMovie?.duration_seconds || 10145;
+
+    // Update Player HUD DOM
+    const hudTitle = document.getElementById('player-hud-title');
+    if (hudTitle) hudTitle.textContent = movieTitle;
+
+    const totalDisplay = document.getElementById('player-total-duration');
+    if (totalDisplay) totalDisplay.textContent = `/ ${this.formatTime(totalDuration)}`;
+
+    const slider = document.getElementById('player-timeline-slider');
+    if (slider) {
+      slider.max = totalDuration;
+      slider.value = startSeconds;
+    }
+
+    const video = document.getElementById('main-video-player');
+    if (video) {
+      // Ensure source is loaded
+      const currentSrc = video.currentSrc || video.src;
+      if (!currentSrc || !currentSrc.includes(streamUrl)) {
+        video.src = streamUrl;
+        video.load();
+      }
+      if (startSeconds > 0) {
+        video.currentTime = startSeconds;
+      }
+    }
+
+    // Ensure backend session exists for this title
+    if (!this.currentSession && this.selectedMovie) {
+      try {
+        this.currentSession = await window.RewindApi.createSession(
+          this.selectedMovie.id || this.selectedMovie.title_id || 'interstellar-epic',
+          startSeconds,
+          'safe'
+        );
+      } catch (err) {
+        console.warn('Session create for player:', err);
+      }
+    }
+
+    // Load subtitle track for real-time cue display
+    this.loadSubtitles();
+
+    this.showScreen('s-player');
+    this.resetHudIdleTimer();
+
+    // Start playback
+    if (video) {
+      video.play().then(() => {
+        this.updatePlayPauseUI(true);
+      }).catch(() => {
+        this.updatePlayPauseUI(false);
+      });
+    }
+  }
+
+  bindPlayerEvents() {
+    const video = document.getElementById('main-video-player');
+    const timeline = document.getElementById('player-timeline-slider');
+    const playPauseBtn = document.getElementById('player-btn-playpause');
+    const rewindBtn = document.getElementById('player-btn-rewind30');
+    const fwd30Btn = document.getElementById('player-btn-fwd30');
+    const fwd5mBtn = document.getElementById('player-btn-fwd5m');
+    const hudBack = document.getElementById('player-hud-back');
+    const subtitlesToggle = document.getElementById('player-hud-subtitles-toggle');
+    const askHeroBtn = document.getElementById('player-btn-ask-ai-hero');
+    const askAiBtn = document.getElementById('player-btn-ask-ai');
+    const drawerResumeBtn = document.getElementById('drawer-btn-resume');
+    const drawerResumeAfterAns = document.getElementById('drawer-btn-resume-after-ans');
+    const drawerSubmitBtn = document.getElementById('drawer-btn-submit');
+    const drawerCustomInput = document.getElementById('drawer-custom-input');
+    const drawerVoiceBtn = document.getElementById('drawer-voice-ptt');
+    const drawerAskMoreBtn = document.getElementById('drawer-btn-ask-more');
+
+    // Play / Pause Toggle
+    playPauseBtn?.addEventListener('click', () => {
+      if (!video) return;
+      if (video.paused) {
+        video.play();
+      } else {
+        video.pause();
+      }
+    });
+
+    video?.addEventListener('play', () => this.updatePlayPauseUI(true));
+    video?.addEventListener('pause', () => this.updatePlayPauseUI(false));
+
+    // Timeline Progress & Subtitle Sync
+    video?.addEventListener('timeupdate', () => {
+      const curTime = Math.floor(video.currentTime || 0);
+      if (timeline && !timeline.matches(':active')) {
+        timeline.value = curTime;
+      }
+      const curFormatted = this.formatTime(curTime);
+      const curDisplay = document.getElementById('player-current-time');
+      const hdrProgress = document.getElementById('hdr-progress-time');
+      if (curDisplay) curDisplay.textContent = curFormatted;
+      if (hdrProgress) hdrProgress.textContent = curFormatted;
+
+      if (this.subtitlesEnabled) {
+        this.renderActiveSubtitle(video.currentTime);
+      }
+    });
+
+    // Seeking via timeline slider
+    timeline?.addEventListener('input', (e) => {
+      if (video) {
+        video.currentTime = parseFloat(e.target.value);
+        this.resetHudIdleTimer();
+      }
+    });
+
+    // Quick Jumps
+    rewindBtn?.addEventListener('click', () => {
+      if (video) {
+        video.currentTime = Math.max(0, video.currentTime - 30);
+        this.resetHudIdleTimer();
+      }
+    });
+
+    fwd30Btn?.addEventListener('click', () => {
+      if (video) {
+        video.currentTime = Math.min(video.duration || 10145, video.currentTime + 30);
+        this.resetHudIdleTimer();
+      }
+    });
+
+    fwd5mBtn?.addEventListener('click', () => {
+      if (video) {
+        video.currentTime = Math.min(video.duration || 10145, video.currentTime + 300);
+        this.resetHudIdleTimer();
+      }
+    });
+
+    // Exit Player
+    hudBack?.addEventListener('click', () => {
+      video?.pause();
+      this.showScreen('s2-catalog');
+    });
+
+    // Subtitle Toggle
+    subtitlesToggle?.addEventListener('click', () => {
+      this.subtitlesEnabled = !this.subtitlesEnabled;
+      subtitlesToggle.classList.toggle('active', this.subtitlesEnabled);
+      const overlay = document.getElementById('player-subtitle-overlay');
+      if (!this.subtitlesEnabled && overlay) overlay.classList.add('hidden');
+      this.showToast(this.subtitlesEnabled ? 'Subtitles: ON' : 'Subtitles: OFF');
+      this.resetHudIdleTimer();
+    });
+
+    // Zero-Screen-Switch AI Triggers
+    askHeroBtn?.addEventListener('click', () => this.openPlayerAiDrawer());
+    askAiBtn?.addEventListener('click', () => this.openPlayerAiDrawer());
+
+    // Drawer Actions
+    drawerResumeBtn?.addEventListener('click', () => this.closePlayerAiDrawer(true));
+    drawerResumeAfterAns?.addEventListener('click', () => this.closePlayerAiDrawer(true));
+
+    // Preset Questions inside Drawer
+    document.querySelectorAll('.drawer-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const q = btn.getAttribute('data-q');
+        if (q) this.submitDrawerQuestion(q);
+      });
+    });
+
+    // Custom Question Submission
+    drawerSubmitBtn?.addEventListener('click', () => {
+      const q = drawerCustomInput?.value?.trim();
+      if (q) this.submitDrawerQuestion(q);
+    });
+
+    drawerCustomInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const q = drawerCustomInput?.value?.trim();
+        if (q) this.submitDrawerQuestion(q);
+      }
+    });
+
+    drawerVoiceBtn?.addEventListener('click', () => this.handleDrawerVoicePtt());
+
+    drawerAskMoreBtn?.addEventListener('click', () => {
+      document.getElementById('drawer-answer-box')?.classList.add('hidden');
+      if (drawerCustomInput) {
+        drawerCustomInput.value = '';
+        drawerCustomInput.focus();
+      }
+    });
+
+    // HUD Auto-hide on mouse activity
+    const playerWrapper = document.getElementById('player-wrapper');
+    playerWrapper?.addEventListener('mousemove', () => this.resetHudIdleTimer());
+    playerWrapper?.addEventListener('click', (e) => {
+      if (e.target === video || e.target === playerWrapper) {
+        this.resetHudIdleTimer();
+      }
+    });
+  }
+
+  updatePlayPauseUI(isPlaying) {
+    const icon = document.getElementById('player-playpause-icon');
+    const text = document.getElementById('player-playpause-text');
+    if (icon) icon.textContent = isPlaying ? '⏸' : '▶';
+    if (text) text.textContent = isPlaying ? 'Pause' : 'Play';
+  }
+
+  handlePlayerSpaceAction() {
+    const drawer = document.getElementById('player-ai-drawer');
+    const video = document.getElementById('main-video-player');
+    if (!video) return;
+
+    if (drawer && drawer.classList.contains('open')) {
+      // If drawer is open, space resumes movie
+      this.closePlayerAiDrawer(true);
+    } else {
+      if (!video.paused) {
+        // Pause movie and open in-between AI drawer immediately!
+        this.openPlayerAiDrawer();
+      } else {
+        video.play();
+      }
+    }
+  }
+
+  async openPlayerAiDrawer() {
+    const video = document.getElementById('main-video-player');
+    if (video && !video.paused) {
+      video.pause();
+    }
+
+    const currentSec = Math.floor(video?.currentTime || 0);
+    const formatted = this.formatTime(currentSec);
+
+    // Update paused timestamp badge
+    const badge = document.getElementById('drawer-paused-timestamp');
+    if (badge) badge.textContent = `Paused at ${formatted}`;
+
+    // Update backend session progress in background
+    if (this.currentSession) {
+      const sessId = this.currentSession.id || this.currentSession.session_id;
+      window.RewindApi.updateProgress(sessId, currentSec).catch(() => {});
+    }
+
+    // Open drawer overlay
+    const drawer = document.getElementById('player-ai-drawer');
+    if (drawer) {
+      drawer.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+    }
+
+    // Ensure answer box is ready for query
+    const loader = document.getElementById('drawer-loading');
+    if (loader) loader.classList.add('hidden');
+
+    // Move focus to first preset button
+    setTimeout(() => {
+      const firstPreset = document.querySelector('.drawer-preset-btn');
+      if (firstPreset) {
+        window.TvNavigator?.setFocus(firstPreset);
+      }
+    }, 120);
+  }
+
+  closePlayerAiDrawer(resumeVideo = true) {
+    const drawer = document.getElementById('player-ai-drawer');
+    if (drawer) {
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+
+    if (resumeVideo) {
+      const video = document.getElementById('main-video-player');
+      video?.play().catch(() => {});
+    }
+
+    // Return focus to Ask AI hero button
+    setTimeout(() => {
+      const heroBtn = document.getElementById('player-btn-ask-ai-hero');
+      if (heroBtn) window.TvNavigator?.setFocus(heroBtn);
+    }, 80);
+  }
+
+  async submitDrawerQuestion(questionText) {
+    if (!questionText) return;
+
+    const video = document.getElementById('main-video-player');
+    const currentSec = Math.floor(video?.currentTime || 0);
+
+    const loader = document.getElementById('drawer-loading');
+    const answerBox = document.getElementById('drawer-answer-box');
+    const queryEl = document.getElementById('drawer-answer-query');
+    const textEl = document.getElementById('drawer-answer-text');
+    const citationsWrap = document.getElementById('drawer-citations-grid');
+
+    if (queryEl) queryEl.textContent = `"${questionText}"`;
+    if (loader) loader.classList.remove('hidden');
+    if (answerBox) answerBox.classList.add('hidden');
+
+    try {
+      // Ensure session exists
+      if (!this.currentSession) {
+        this.currentSession = await window.RewindApi.createSession(
+          this.selectedMovie?.id || 'interstellar-epic',
+          currentSec,
+          'safe'
+        );
+      }
+
+      const sessId = this.currentSession.id || this.currentSession.session_id;
+
+      // Update progress to exact paused frame
+      await window.RewindApi.updateProgress(sessId, currentSec).catch(() => {});
+
+      const result = await window.RewindApi.askQuestion(sessId, questionText);
+
+      if (loader) loader.classList.add('hidden');
+      if (answerBox) answerBox.classList.remove('hidden');
+
+      if (textEl) {
+        textEl.textContent = result.answer || result.text || 'Context retrieved.';
+      }
+
+      // Populate Verified Citations
+      if (citationsWrap) {
+        citationsWrap.innerHTML = '';
+        const citations = result.citations || result.sources || [];
+        if (citations.length === 0) {
+          citationsWrap.innerHTML = `<span style="color:var(--text-muted); font-size:12px;">Grounded against verified dialogue up to ${this.formatTime(currentSec)}</span>`;
+        } else {
+          citations.forEach(c => {
+            const chip = document.createElement('button');
+            chip.className = 'citation-chip tv-focusable';
+            const cueSec = Math.floor(c.start_time_seconds || c.start_seconds || 0);
+            chip.textContent = `⏱️ ${this.formatTime(cueSec)} • ${c.speaker || 'Dialogue'}`;
+            chip.title = c.text || 'Jump to scene';
+            chip.addEventListener('click', () => {
+              if (video) video.currentTime = cueSec;
+              this.closePlayerAiDrawer(true);
+              this.showToast(`Jumped to scene at ${this.formatTime(cueSec)}`);
+            });
+            citationsWrap.appendChild(chip);
+          });
+        }
+      }
+
+      // TTS audio playback if available
+      if (result.audio_base64) {
+        const audioEl = document.getElementById('drawer-tts-audio');
+        if (audioEl) {
+          audioEl.src = `data:audio/mp3;base64,${result.audio_base64}`;
+          audioEl.play().catch(() => {});
+        }
+      }
+
+      // Scroll to answer and focus resume button
+      setTimeout(() => {
+        const scrollBody = document.getElementById('drawer-scroll-body');
+        if (scrollBody) scrollBody.scrollTop = scrollBody.scrollHeight;
+        const resumeBtn = document.getElementById('drawer-btn-resume-after-ans');
+        if (resumeBtn) window.TvNavigator?.setFocus(resumeBtn);
+      }, 100);
+
+    } catch (err) {
+      if (loader) loader.classList.add('hidden');
+      if (answerBox) answerBox.classList.remove('hidden');
+      if (textEl) {
+        if (err.code === 'SPOILER_BLOCKED' || err.status === 409) {
+          textEl.innerHTML = `<span style="color:#f59e0b; font-weight:700;">⚠️ FUTURE SPOILER BLOCKED:</span> This answer requires dialogue and events that occur later in the movie. Safe Mode has shielded you from this revelation.`;
+        } else {
+          textEl.textContent = `Unable to retrieve dialogue context: ${err.message}`;
+        }
+      }
+    }
+  }
+
+  async handleDrawerVoicePtt() {
+    const micIcon = document.getElementById('drawer-ptt-mic');
+    const label = document.getElementById('drawer-ptt-label');
+
+    if (this.isRecordingVoice) {
+      // Stop recording
+      this.isRecordingVoice = false;
+      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+        this.mediaRecorder.stop();
+      }
+      if (micIcon) micIcon.textContent = '🎙️';
+      if (label) label.textContent = 'Processing Voice Query...';
+      return;
+    }
+
+    // Start recording
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      this.showToast('Microphone input is not supported in this browser.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.isRecordingVoice = true;
+      this.audioChunks = [];
+      if (micIcon) micIcon.textContent = '⏹️';
+      if (label) label.textContent = 'Listening... Click to Finish';
+
+      this.mediaRecorder = new MediaRecorder(stream);
+      this.mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) this.audioChunks.push(e.data);
+      };
+
+      this.mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64Data = reader.result.split(',')[1];
+          if (micIcon) micIcon.textContent = '🎙️';
+          if (label) label.textContent = 'Push to Talk (Voice Query)';
+
+          // Submit voice query to backend
+          const video = document.getElementById('main-video-player');
+          const currentSec = Math.floor(video?.currentTime || 0);
+          const sessId = this.currentSession?.id || this.currentSession?.session_id;
+
+          try {
+            const res = await window.RewindApi.submitVoiceQuery(sessId, base64Data, currentSec, 'safe', true);
+            if (res.transcript) {
+              const queryEl = document.getElementById('drawer-custom-input');
+              if (queryEl) queryEl.value = res.transcript;
+            }
+            if (res.answer) {
+              const ansBox = document.getElementById('drawer-answer-box');
+              const textEl = document.getElementById('drawer-answer-text');
+              const queryTitle = document.getElementById('drawer-answer-query');
+              if (queryTitle) queryTitle.textContent = `"${res.transcript || 'Voice Query'}"`;
+              if (textEl) textEl.textContent = res.answer;
+              if (ansBox) ansBox.classList.remove('hidden');
+
+              if (res.audio_base64) {
+                const audioEl = document.getElementById('drawer-tts-audio');
+                if (audioEl) {
+                  audioEl.src = `data:audio/mp3;base64,${res.audio_base64}`;
+                  audioEl.play().catch(() => {});
+                }
+              }
+            }
+          } catch (vErr) {
+            this.showToast(`Voice query failed: ${vErr.message}`);
+          }
+        };
+        reader.readAsDataURL(audioBlob);
+      };
+
+      this.mediaRecorder.start();
+    } catch (permErr) {
+      this.isRecordingVoice = false;
+      if (micIcon) micIcon.textContent = '🎙️';
+      if (label) label.textContent = 'Push to Talk (Voice Query)';
+      this.showToast(`Microphone permission denied: ${permErr.message}`);
+    }
+  }
+
+  async loadSubtitles() {
+    if (this.playerSubtitles && this.playerSubtitles.length > 0) return;
+    try {
+      const res = await fetch('/media/interstellar.srt');
+      if (res.ok) {
+        const text = await res.text();
+        this.playerSubtitles = this.parseSrt(text);
+        console.log(`Loaded ${this.playerSubtitles.length} subtitle cues for on-screen playback.`);
+      }
+    } catch (e) {
+      console.warn('Subtitle track load:', e);
+    }
+  }
+
+  parseSrt(srtText) {
+    const cues = [];
+    if (!srtText) return cues;
+    const blocks = srtText.trim().replace(/\r\n/g, '\n').split(/\n\s*\n/);
+    for (const block of blocks) {
+      const lines = block.split('\n');
+      if (lines.length >= 2) {
+        const timeMatch = lines[1].match(/(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/);
+        if (timeMatch) {
+          const start = parseInt(timeMatch[1], 10) * 3600 + parseInt(timeMatch[2], 10) * 60 + parseInt(timeMatch[3], 10) + parseInt(timeMatch[4], 10) / 1000;
+          const end = parseInt(timeMatch[5], 10) * 3600 + parseInt(timeMatch[6], 10) * 60 + parseInt(timeMatch[7], 10) + parseInt(timeMatch[8], 10) / 1000;
+          const text = lines.slice(2).join(' ').replace(/<[^>]+>/g, '').trim();
+          if (text) {
+            cues.push({ start, end, text });
+          }
+        }
+      }
+    }
+    return cues;
+  }
+
+  renderActiveSubtitle(currentTime) {
+    const overlay = document.getElementById('player-subtitle-overlay');
+    const textEl = document.getElementById('player-subtitle-text');
+    if (!overlay || !textEl || !this.playerSubtitles) return;
+
+    const cue = this.playerSubtitles.find(c => currentTime >= c.start && currentTime <= c.end);
+    if (cue) {
+      textEl.textContent = cue.text;
+      overlay.classList.remove('hidden');
+    } else {
+      overlay.classList.add('hidden');
+    }
+  }
+
+  resetHudIdleTimer() {
+    const hud = document.getElementById('player-hud');
+    if (!hud) return;
+
+    hud.classList.remove('idle-hidden');
+    if (this.hudIdleTimer) clearTimeout(this.hudIdleTimer);
+
+    const video = document.getElementById('main-video-player');
+    const drawer = document.getElementById('player-ai-drawer');
+
+    // Only hide HUD if video is actively playing and drawer is NOT open
+    if (video && !video.paused && (!drawer || !drawer.classList.contains('open'))) {
+      this.hudIdleTimer = setTimeout(() => {
+        hud.classList.add('idle-hidden');
+      }, 4500);
     }
   }
 
@@ -332,6 +917,59 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       }
     });
 
+    // Push-to-Talk Voice Button (REWIND-REQ-020)
+    const pttBtn = document.getElementById('btn-voice-ptt');
+    const pttLabel = document.getElementById('voice-ptt-label');
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    pttBtn?.addEventListener('click', async () => {
+      if (!this.currentSession) return;
+      if (!isRecording) {
+        try {
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = (e) => {
+              if (e.data.size > 0) audioChunks.push(e.data);
+            };
+            mediaRecorder.onstop = async () => {
+              const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+              const reader = new FileReader();
+              reader.onloadend = async () => {
+                const b64 = reader.result.split(',')[1];
+                await this.submitVoiceQuery(b64);
+              };
+              reader.readAsDataURL(audioBlob);
+              stream.getTracks().forEach(track => track.stop());
+            };
+            mediaRecorder.start();
+            isRecording = true;
+            if (pttLabel) pttLabel.textContent = 'Listening... (Click to Send)';
+            pttBtn.classList.add('recording-pulse');
+            this.showToast('Microphone active. Speak your story question now.');
+          } else {
+            this.showToast('MediaDevices unavailable; using voice assistant fallback.');
+            const fakeAudioB64 = btoa('MOCK_STT:What is happening in this scene right now?');
+            await this.submitVoiceQuery(fakeAudioB64);
+          }
+        } catch (micErr) {
+          this.showToast(`Mic access: ${micErr.message}. Running voice assistant fallback.`);
+          const fakeAudioB64 = btoa('MOCK_STT:Explain the current scene simply.');
+          await this.submitVoiceQuery(fakeAudioB64);
+        }
+      } else {
+        isRecording = false;
+        if (pttLabel) pttLabel.textContent = 'Processing Voice...';
+        pttBtn.classList.remove('recording-pulse');
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+      }
+    });
+
     document.getElementById('btn-search-subtitle-line')?.addEventListener('click', () => {
       this.searchSubtitleLines();
     });
@@ -360,6 +998,49 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       }
     });
   }
+
+  async submitVoiceQuery(audioB64) {
+    if (!this.currentSession) return;
+    const loader = document.getElementById('question-loader');
+    loader?.classList.remove('hidden');
+
+    try {
+      const response = await window.RewindApi.submitVoiceQuery(
+        this.currentSession.session_id,
+        audioB64,
+        this.currentSession.current_position_seconds,
+        this.currentSession.spoiler_mode || 'safe',
+        true
+      );
+      loader?.classList.add('hidden');
+      const pttLabel = document.getElementById('voice-ptt-label');
+      if (pttLabel) pttLabel.textContent = 'Push to Talk';
+
+      const qInput = document.getElementById('custom-question-input');
+      if (qInput && response.recognized_question) {
+        qInput.value = response.recognized_question;
+      }
+      this.lastSubmittedQuestion = response.recognized_question;
+      this.showToast(`Recognized: "${response.recognized_question}"`);
+
+      // Play synthesized audio if available (AT-11)
+      if (response.audio_base64) {
+        const ttsPlayer = document.getElementById('assistant-tts-player');
+        if (ttsPlayer) {
+          ttsPlayer.src = `data:audio/wav;base64,${response.audio_base64}`;
+          ttsPlayer.play().catch(() => {});
+        }
+      }
+
+      this.handleQuestionOutcome(response);
+    } catch (err) {
+      loader?.classList.add('hidden');
+      const pttLabel = document.getElementById('voice-ptt-label');
+      if (pttLabel) pttLabel.textContent = 'Push to Talk';
+      this.showToast(`Voice query failed: ${err.message}`);
+    }
+  }
+
 
   updateCompanionContext() {
     if (!this.currentSession) return;

@@ -196,8 +196,43 @@ class RewindApiClient {
       }),
     });
   }
+
+  // Push-To-Talk Voice Query (REWIND-REQ-018 / 020)
+  async submitVoiceQuery(sessionId, audioBase64, positionSeconds = null, spoilerMode = 'safe', synthesizeSpeech = true) {
+    return this._request('/assistant/voice-query', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        audio_base64: audioBase64,
+        playback_position_seconds: positionSeconds,
+        spoiler_mode: spoilerMode,
+        synthesize_speech: synthesizeSpeech,
+      }),
+    });
+  }
+
+  // Media Processing Pipeline (REWIND-REQ-019)
+  async adminUploadMedia(movieId, fileName, fileBase64, contentType = 'video/mp4', suppliedSrt = null, adminToken = '') {
+    return this._request(`/admin/movies/${encodeURIComponent(movieId)}/media`, {
+      method: 'POST',
+      headers: adminToken ? { 'X-Admin-Token': adminToken } : {},
+      body: JSON.stringify({
+        file_name: fileName,
+        file_base64: fileBase64,
+        content_type: contentType,
+        supplied_srt_content: suppliedSrt,
+      }),
+    });
+  }
+
+  async adminGetJobStatus(jobId, adminToken = '') {
+    return this._request(`/admin/jobs/${encodeURIComponent(jobId)}`, {
+      headers: adminToken ? { 'X-Admin-Token': adminToken } : {},
+    });
+  }
 }
 
 
 // Global API instance
 window.RewindApi = new RewindApiClient();
+

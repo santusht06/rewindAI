@@ -28,7 +28,10 @@
 | **E8** | Core Fire TV user journeys (10-ft remote D-pad) | P1 | Remote D-pad navigation | `VERIFIED` |
 | **E9** | End-to-end integration and regression | P1 | AC-001 - AC-020 | `VERIFIED` (45/45 tests passing) |
 | **E10**| Operational readiness and controlled beta | P2 | Operational targets | `READY` |
-| **E11**| Production launch | P2 | Final sign-off | `NOT_STARTED` |
+| **E11**| Ground Era Production hosting & Cloudflare DNS | P0 | Live HTTPS deployment | `VERIFIED` (`rewind.sharexpress.in`) |
+| **E12**| OTT Demo Host & Media Ingestion Pipeline (REQ-018/019) | P1 | Dual Readiness Gate | `VERIFIED` (AT-01..AT-06, 78/78 tests) |
+| **E13**| Push-to-Talk Voice & Speech Synthesis (REQ-020) | P1 | Audio Q&A with STT/TTS | `VERIFIED` (AT-11, AT-12) |
+
 
 ---
 

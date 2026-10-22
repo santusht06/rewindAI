@@ -1,0 +1,16 @@
+flowchart TD
+  A["Create Movie Record"] --> B["Upload to Object Storage"] --> C["Persist Asset Reference"] --> D["Create Processing Job"] --> E["Inspect with FFprobe"] --> F{"Valid media?"}
+  F -->|No| X["FAILED: Validation"]
+  F -->|Yes| G["Media Processing"]
+  G --> H["FFmpeg Transcode / HLS Package"] --> I["Validate Manifest and Segments"]
+  I -->|Invalid| Y["FAILED: Playback Validation"]
+  I -->|Valid| J["Playback Assets Ready"]
+  G --> K{"Usable subtitle track?"}
+  K -->|Yes| L["Extract subtitles"]
+  K -->|No| M["Extract audio"] --> N["STT Provider"]
+  L --> O["Normalize timestamps"]
+  N --> O --> P["Persist Transcript Version"] --> Q["Contextual Chunking"] --> R["Embeddings"] --> S["Upsert vectors + text index"] --> T["Validate AI Index"]
+  J --> U{"Playback ready AND AI index ready?"}
+  T --> U
+  U -->|Yes| V["READY / Publishable"]
+  U -->|No| W["Remain processing or fail"]

@@ -56,6 +56,11 @@ graphify-out/
 *.db
 *.sqlite
 *.sqlite3
-scratch/
 ops/backups/
+
+# Large Media Binaries
+media/*.mp4
+media/*.mkv
+media/*.avi
+*.mov
 

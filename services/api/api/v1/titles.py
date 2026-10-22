@@ -52,6 +52,8 @@ async def list_titles(
                 availability="available" if m.status == MovieStatus.PUBLISHED else "unavailable",
                 index_status=index_status,
                 has_active_index=has_active,
+                stream_url=m.stream_url,
+                is_playback_ready=m.is_playback_ready,
             )
         )
 
@@ -89,4 +91,6 @@ async def get_title(
         status=MovieStatus(movie.status),
         questions_available=questions_available,
         supported_locales=["en", "es", "fr", "hi", "ja"],
+        stream_url=movie.stream_url,
+        is_playback_ready=movie.is_playback_ready,
     )
