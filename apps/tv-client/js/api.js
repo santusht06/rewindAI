@@ -87,6 +87,7 @@ class RewindApiClient {
     return this._request(`/sessions/${encodeURIComponent(sessionId)}/progress`, {
       method: 'PATCH',
       body: JSON.stringify({
+        position_seconds: positionSeconds,
         current_position_seconds: positionSeconds,
         source: source,
       }),

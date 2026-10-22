@@ -10,7 +10,7 @@ Adheres strictly to Rewind Complete Documentation Package:
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from services.api.domain.models import (
     MovieStatus,
@@ -103,9 +103,18 @@ class UpdateProgressRequest(BaseModel):
     Clients cannot self-assert verified_integration or partner_sync without
     server-side cryptographic verification or partner validation.
     """
-    position_seconds: int = Field(..., ge=0, description="Playback position in integer seconds")
+    position_seconds: int | None = Field(default=None, ge=0, description="Playback position in integer seconds")
+    current_position_seconds: int | None = Field(default=None, ge=0)
     source: ProgressSource = Field(default=ProgressSource.MANUAL_SLIDER)
     duration_seconds: int | None = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def normalize_position(self) -> "UpdateProgressRequest":
+        if self.position_seconds is None and self.current_position_seconds is not None:
+            self.position_seconds = self.current_position_seconds
+        elif self.position_seconds is None:
+            self.position_seconds = 0
+        return self
 
 
 class ProgressResponse(BaseModel):

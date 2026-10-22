@@ -12,7 +12,7 @@ class RewindTvApp {
     this.pendingSpoilerNonce = null;
     this.lastSubmittedQuestion = '';
     this.playerSubtitles = [];
-    this.subtitlesEnabled = true;
+    this.subtitlesEnabled = false;  // OFF by default — user watches normally, asks when curious
     this.hudIdleTimer = null;
     this.isRecordingVoice = false;
     this.mediaRecorder = null;
@@ -354,7 +354,10 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     }
 
     const movieTitle = this.selectedMovie?.display_title || 'Interstellar (2014)';
-    const streamUrl = this.selectedMovie?.stream_url || '/media/interstellar.mp4';
+    // Preferred stream URL: Server MinIO Object Storage (with YouTube-style Range Request Chunking)
+    // Secondary: ImageKit HLS adaptive stream if configured
+    const defaultStream = this.selectedMovie?.stream_url || 'https://rewind.sharexpress.in/minio/interstellar.mp4';
+    const streamUrl = defaultStream;
     const totalDuration = this.selectedMovie?.duration_seconds || 10145;
 
     // Update Player HUD DOM
@@ -372,15 +375,7 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
 
     const video = document.getElementById('main-video-player');
     if (video) {
-      // Ensure source is loaded
-      const currentSrc = video.currentSrc || video.src;
-      if (!currentSrc || !currentSrc.includes(streamUrl)) {
-        video.src = streamUrl;
-        video.load();
-      }
-      if (startSeconds > 0) {
-        video.currentTime = startSeconds;
-      }
+      this.initVideoStreaming(video, streamUrl, startSeconds);
     }
 
     // Ensure backend session exists for this title
@@ -409,6 +404,135 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       }).catch(() => {
         this.updatePlayPauseUI(false);
       });
+    }
+  }
+
+  /**
+   * Initializes YouTube-style chunked streaming architecture:
+   * 1. Adaptive Bitrate Streaming (HLS) via MediaSource Extensions (MSE) with Hls.js
+   * 2. HTTP 206 Byte-Range Chunk fallback for direct CDN video delivery
+   */
+  initVideoStreaming(video, streamUrl, startSeconds = 0) {
+    if (!video) return;
+
+    const chunkModeBadge = document.getElementById('player-chunk-mode');
+    const isHlsUrl = streamUrl.includes('.m3u8') || streamUrl.includes('ik-master');
+
+    // YouTube Architecture Pattern: MSE HLS Chunked Delivery
+    if (isHlsUrl && window.Hls && window.Hls.isSupported()) {
+      if (this.hlsInstance) {
+        this.hlsInstance.destroy();
+      }
+      this.hlsInstance = new window.Hls({
+        maxBufferLength: 30, // Buffers 30s ahead (matching YouTube chunk buffer window)
+        maxMaxBufferLength: 60,
+        maxBufferSize: 60 * 1024 * 1024,
+        enableWorker: true,
+        lowLatencyMode: false,
+        backBufferLength: 30,
+      });
+
+      this.hlsInstance.loadSource(streamUrl);
+      this.hlsInstance.attachMedia(video);
+
+      this.hlsInstance.on(window.Hls.Events.MANIFEST_PARSED, (evt, data) => {
+        if (chunkModeBadge) chunkModeBadge.textContent = 'HLS Chunks (MSE)';
+        const levels = data.levels || [];
+        const resBadge = document.getElementById('player-resolution-badge');
+        if (resBadge && levels.length > 0) {
+          const topLevel = levels[levels.length - 1];
+          resBadge.textContent = `${topLevel.height || 1080}p HD`;
+        }
+        if (startSeconds > 0) video.currentTime = startSeconds;
+      });
+
+      this.hlsInstance.on(window.Hls.Events.FRAG_LOADED, () => {
+        this.updateBufferBar(video);
+      });
+
+      this.hlsInstance.on(window.Hls.Events.ERROR, (evt, data) => {
+        if (data.fatal) {
+          console.warn('HLS stream failed, falling back to direct Range-Request CDN chunks:', data);
+          this.hlsInstance.destroy();
+          this.hlsInstance = null;
+          // Fallback to direct byte-range chunks
+          this.initDirectRangeStreaming(video, '/media/interstellar.mp4', startSeconds);
+        }
+      });
+    } else if (isHlsUrl && video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Native Apple HLS (Safari / macOS)
+      video.src = streamUrl;
+      if (chunkModeBadge) chunkModeBadge.textContent = 'HLS Chunks (Native)';
+      if (startSeconds > 0) video.currentTime = startSeconds;
+      video.load();
+    } else {
+      // HTTP 206 Partial Content Byte-Range Chunk Delivery
+      this.initDirectRangeStreaming(video, streamUrl, startSeconds);
+    }
+  }
+
+  initDirectRangeStreaming(video, streamUrl, startSeconds = 0) {
+    const chunkModeBadge = document.getElementById('player-chunk-mode');
+    if (chunkModeBadge) {
+      if (streamUrl.includes('ik.imagekit.io')) {
+        chunkModeBadge.textContent = 'ImageKit Chunks (206)';
+      } else if (streamUrl.includes('minio')) {
+        chunkModeBadge.textContent = 'Server MinIO Chunks (206)';
+      } else if (streamUrl.includes('sharexpress')) {
+        chunkModeBadge.textContent = 'Cloudflare CDN Chunks';
+      } else {
+        chunkModeBadge.textContent = 'Local Chunks (206)';
+      }
+    }
+    const currentSrc = video.currentSrc || video.src;
+    if (!currentSrc || !currentSrc.includes(streamUrl)) {
+      video.src = streamUrl;
+      video.load();
+    }
+    if (startSeconds > 0) {
+      video.currentTime = startSeconds;
+    }
+
+    // Robust fallback to local static media if CDN is unreachable
+    video.onerror = () => {
+      const localFallback = '/media/interstellar.mp4';
+      if (!video.src.endsWith(localFallback)) {
+        console.warn('Primary stream failed, seamlessly falling back to:', localFallback);
+        video.src = localFallback;
+        video.load();
+        if (chunkModeBadge) chunkModeBadge.textContent = 'Local Chunks (206)';
+      }
+    };
+  }
+
+  updateBufferBar(video) {
+    if (!video) return;
+    const dur = video.duration || this.selectedMovie?.duration_seconds || 10145;
+    if (!dur) return;
+
+    let currentBufferedEnd = 0;
+    const curTime = video.currentTime || 0;
+
+    for (let i = 0; i < video.buffered.length; i++) {
+      const start = video.buffered.start(i);
+      const end = video.buffered.end(i);
+      if (start <= curTime + 0.5 && end >= curTime - 0.5) {
+        currentBufferedEnd = end;
+        break;
+      }
+      if (end > currentBufferedEnd) {
+        currentBufferedEnd = end;
+      }
+    }
+
+    const bufferPct = Math.min(100, Math.max(0, (currentBufferedEnd / dur) * 100));
+    const bufferBar = document.getElementById('player-buffer-bar');
+    if (bufferBar) bufferBar.style.width = `${bufferPct}%`;
+
+    const bufferStats = document.getElementById('buffer-text');
+    if (bufferStats) {
+      const aheadSeconds = Math.max(0, currentBufferedEnd - curTime);
+      bufferStats.textContent = `Buffer: ${aheadSeconds.toFixed(1)}s`;
     }
   }
 
@@ -443,12 +567,21 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     video?.addEventListener('play', () => this.updatePlayPauseUI(true));
     video?.addEventListener('pause', () => this.updatePlayPauseUI(false));
 
-    // Timeline Progress & Subtitle Sync
+    // Timeline Progress, Buffer & Subtitle Sync
     video?.addEventListener('timeupdate', () => {
       const curTime = Math.floor(video.currentTime || 0);
+      const dur = video.duration || this.selectedMovie?.duration_seconds || 10145;
+
       if (timeline && !timeline.matches(':active')) {
         timeline.value = curTime;
       }
+
+      // Update YouTube-style Progress bar
+      const progBar = document.getElementById('player-progress-bar');
+      if (progBar && dur > 0) {
+        progBar.style.width = `${Math.min(100, (curTime / dur) * 100)}%`;
+      }
+
       const curFormatted = this.formatTime(curTime);
       const curDisplay = document.getElementById('player-current-time');
       const hdrProgress = document.getElementById('hdr-progress-time');
@@ -460,10 +593,21 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       }
     });
 
+    // YouTube-style Buffer updates on progress event
+    video?.addEventListener('progress', () => {
+      this.updateBufferBar(video);
+    });
+
     // Seeking via timeline slider
     timeline?.addEventListener('input', (e) => {
       if (video) {
-        video.currentTime = parseFloat(e.target.value);
+        const val = parseFloat(e.target.value);
+        video.currentTime = val;
+        const dur = video.duration || this.selectedMovie?.duration_seconds || 10145;
+        const progBar = document.getElementById('player-progress-bar');
+        if (progBar && dur > 0) {
+          progBar.style.width = `${Math.min(100, (val / dur) * 100)}%`;
+        }
         this.resetHudIdleTimer();
       }
     });
@@ -514,14 +658,6 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     drawerResumeBtn?.addEventListener('click', () => this.closePlayerAiDrawer(true));
     drawerResumeAfterAns?.addEventListener('click', () => this.closePlayerAiDrawer(true));
 
-    // Preset Questions inside Drawer
-    document.querySelectorAll('.drawer-preset-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const q = btn.getAttribute('data-q');
-        if (q) this.submitDrawerQuestion(q);
-      });
-    });
-
     // Custom Question Submission
     drawerSubmitBtn?.addEventListener('click', () => {
       const q = drawerCustomInput?.value?.trim();
@@ -538,7 +674,6 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     drawerVoiceBtn?.addEventListener('click', () => this.handleDrawerVoicePtt());
 
     drawerAskMoreBtn?.addEventListener('click', () => {
-      document.getElementById('drawer-answer-box')?.classList.add('hidden');
       if (drawerCustomInput) {
         drawerCustomInput.value = '';
         drawerCustomInput.focus();
@@ -568,15 +703,14 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     if (!video) return;
 
     if (drawer && drawer.classList.contains('open')) {
-      // If drawer is open, space resumes movie
+      // Space while drawer is open → close drawer and resume
       this.closePlayerAiDrawer(true);
+    } else if (video.paused) {
+      // Space while paused and drawer closed → open drawer (they paused to ask)
+      this.openPlayerAiDrawer();
     } else {
-      if (!video.paused) {
-        // Pause movie and open in-between AI drawer immediately!
-        this.openPlayerAiDrawer();
-      } else {
-        video.play();
-      }
+      // Space while playing → pause and open drawer
+      this.openPlayerAiDrawer();
     }
   }
 
@@ -606,17 +740,15 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       drawer.setAttribute('aria-hidden', 'false');
     }
 
-    // Ensure answer box is ready for query
-    const loader = document.getElementById('drawer-loading');
-    if (loader) loader.classList.add('hidden');
+    // Scroll thread to bottom
+    const thread = document.getElementById('drawer-chat-thread');
+    if (thread) thread.scrollTop = thread.scrollHeight;
 
-    // Move focus to first preset button
+    // Focus the text input
     setTimeout(() => {
-      const firstPreset = document.querySelector('.drawer-preset-btn');
-      if (firstPreset) {
-        window.TvNavigator?.setFocus(firstPreset);
-      }
-    }, 120);
+      const input = document.getElementById('drawer-custom-input');
+      if (input) input.focus();
+    }, 80);
   }
 
   closePlayerAiDrawer(resumeVideo = true) {
@@ -631,10 +763,10 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       video?.play().catch(() => {});
     }
 
-    // Return focus to Ask AI hero button
+    // Return focus to the Ask AI button in the HUD
     setTimeout(() => {
-      const heroBtn = document.getElementById('player-btn-ask-ai-hero');
-      if (heroBtn) window.TvNavigator?.setFocus(heroBtn);
+      const askBtn = document.getElementById('player-btn-ask-ai');
+      if (askBtn) window.TvNavigator?.setFocus(askBtn);
     }, 80);
   }
 
@@ -644,15 +776,27 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     const video = document.getElementById('main-video-player');
     const currentSec = Math.floor(video?.currentTime || 0);
 
+    const thread = document.getElementById('drawer-chat-thread');
     const loader = document.getElementById('drawer-loading');
-    const answerBox = document.getElementById('drawer-answer-box');
-    const queryEl = document.getElementById('drawer-answer-query');
-    const textEl = document.getElementById('drawer-answer-text');
-    const citationsWrap = document.getElementById('drawer-citations-grid');
+    const input = document.getElementById('drawer-custom-input');
 
-    if (queryEl) queryEl.textContent = `"${questionText}"`;
+    // Append user bubble
+    if (thread) {
+      const userMsg = document.createElement('div');
+      userMsg.className = 'chat-msg user';
+      userMsg.innerHTML = `
+        <div class="chat-avatar">👤</div>
+        <div class="chat-bubble">${this.escapeHtml(questionText)}</div>
+      `;
+      thread.appendChild(userMsg);
+      thread.scrollTop = thread.scrollHeight;
+    }
+
+    // Clear input
+    if (input) input.value = '';
+
+    // Show thinking
     if (loader) loader.classList.remove('hidden');
-    if (answerBox) answerBox.classList.add('hidden');
 
     try {
       // Ensure session exists
@@ -672,33 +816,47 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       const result = await window.RewindApi.askQuestion(sessId, questionText);
 
       if (loader) loader.classList.add('hidden');
-      if (answerBox) answerBox.classList.remove('hidden');
 
-      if (textEl) {
-        textEl.textContent = result.answer || result.text || 'Context retrieved.';
-      }
+      // Build AI answer bubble
+      const answerText = result.answer || result.text || 'Context retrieved.';
+      const citations = result.citations || result.sources || [];
 
-      // Populate Verified Citations
-      if (citationsWrap) {
-        citationsWrap.innerHTML = '';
-        const citations = result.citations || result.sources || [];
-        if (citations.length === 0) {
-          citationsWrap.innerHTML = `<span style="color:var(--text-muted); font-size:12px;">Grounded against verified dialogue up to ${this.formatTime(currentSec)}</span>`;
-        } else {
-          citations.forEach(c => {
-            const chip = document.createElement('button');
-            chip.className = 'citation-chip tv-focusable';
+      if (thread) {
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'chat-msg ai';
+
+        let citationsHtml = '';
+        if (citations.length > 0) {
+          const chips = citations.map(c => {
             const cueSec = Math.floor(c.start_time_seconds || c.start_seconds || 0);
-            chip.textContent = `⏱️ ${this.formatTime(cueSec)} • ${c.speaker || 'Dialogue'}`;
-            chip.title = c.text || 'Jump to scene';
-            chip.addEventListener('click', () => {
-              if (video) video.currentTime = cueSec;
-              this.closePlayerAiDrawer(true);
-              this.showToast(`Jumped to scene at ${this.formatTime(cueSec)}`);
-            });
-            citationsWrap.appendChild(chip);
-          });
+            return `<button class="citation-chip" data-sec="${cueSec}" title="${this.escapeHtml(c.text || 'Jump to scene')}">
+              ⏱ ${this.formatTime(cueSec)} ${c.speaker ? '· ' + this.escapeHtml(c.speaker) : ''}
+            </button>`;
+          }).join('');
+          citationsHtml = `<div class="chat-citations">${chips}</div>`;
         }
+
+        aiMsg.innerHTML = `
+          <div class="chat-avatar">✦</div>
+          <div class="chat-bubble">
+            ${this.escapeHtml(answerText)}
+            ${citationsHtml}
+          </div>
+        `;
+
+        thread.appendChild(aiMsg);
+
+        // Wire citation chips to seek
+        aiMsg.querySelectorAll('.citation-chip').forEach(chip => {
+          chip.addEventListener('click', () => {
+            const sec = parseInt(chip.getAttribute('data-sec'), 10);
+            if (video && !isNaN(sec)) video.currentTime = sec;
+            this.closePlayerAiDrawer(true);
+            this.showToast(`Jumped to ${this.formatTime(sec)}`);
+          });
+        });
+
+        thread.scrollTop = thread.scrollHeight;
       }
 
       // TTS audio playback if available
@@ -710,23 +868,28 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
         }
       }
 
-      // Scroll to answer and focus resume button
+      // Focus input for follow-up
       setTimeout(() => {
-        const scrollBody = document.getElementById('drawer-scroll-body');
-        if (scrollBody) scrollBody.scrollTop = scrollBody.scrollHeight;
-        const resumeBtn = document.getElementById('drawer-btn-resume-after-ans');
-        if (resumeBtn) window.TvNavigator?.setFocus(resumeBtn);
-      }, 100);
+        if (input) input.focus();
+      }, 80);
 
     } catch (err) {
       if (loader) loader.classList.add('hidden');
-      if (answerBox) answerBox.classList.remove('hidden');
-      if (textEl) {
+
+      // Show error as AI bubble
+      if (thread) {
+        const errMsg = document.createElement('div');
+        errMsg.className = 'chat-msg ai';
+        let errText = `Unable to retrieve dialogue context: ${err.message}`;
         if (err.code === 'SPOILER_BLOCKED' || err.status === 409) {
-          textEl.innerHTML = `<span style="color:#f59e0b; font-weight:700;">⚠️ FUTURE SPOILER BLOCKED:</span> This answer requires dialogue and events that occur later in the movie. Safe Mode has shielded you from this revelation.`;
-        } else {
-          textEl.textContent = `Unable to retrieve dialogue context: ${err.message}`;
+          errText = "⚠️ Future spoiler blocked \u2014 this answer reveals events you haven\u2019t reached yet. Safe Mode is protecting you.";
         }
+        errMsg.innerHTML = `
+          <div class="chat-avatar">✦</div>
+          <div class="chat-bubble" style="border-color: rgba(245,158,11,0.3); color: #fbbf24;">${errText}</div>
+        `;
+        thread.appendChild(errMsg);
+        thread.scrollTop = thread.scrollHeight;
       }
     }
   }

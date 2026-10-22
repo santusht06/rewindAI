@@ -239,15 +239,8 @@
               <span id="player-subtitle-text"></span>
             </div>
 
-            <!-- In-Screen Floating Quick Pause / Ask AI Trigger Indicator -->
-            <div class="player-ask-trigger" id="player-ask-trigger">
-              <button class="player-hero-ai-btn tv-focusable" id="player-btn-ask-ai-hero" tabindex="0" title="Pause and ask Rewind AI about this exact frame">
-                <span class="pulse-ring"></span>
-                <span class="ai-sparkle">✨</span>
-                <span class="ai-btn-text">Pause &amp; Ask Rewind AI</span>
-                <span class="ai-key-hint">Press [Space] or [OK]</span>
-              </button>
-            </div>
+            <!-- Hidden anchor to keep JS wiring intact -->
+            <button id="player-btn-ask-ai-hero" style="display:none;" tabindex="-1" aria-hidden="true"></button>
 
             <!-- Player On-Screen Display HUD (Auto-hiding on idle playback) -->
             <div class="player-hud" id="player-hud">
@@ -258,10 +251,14 @@
                 </button>
                 <div class="player-hud-meta">
                   <h2 class="player-hud-title" id="player-hud-title">Interstellar (2014)</h2>
-                  <span class="player-hud-badge" id="player-hud-badge">● 1,973 Subtitle Cues Indexed • In-Screen AI Ready</span>
+                  <span class="player-hud-badge" id="player-hud-badge">● Rewind AI — Press Space to ask about this scene</span>
                 </div>
                 <div class="player-hud-right">
-                  <span class="player-resolution-pill">1080p HD</span>
+                  <span class="player-chunk-pill" id="player-chunk-badge" title="YouTube-style Adaptive Chunk Architecture">
+                    <span class="chunk-pulse-dot"></span>
+                    <span id="player-chunk-mode">Chunks (CDN)</span>
+                  </span>
+                  <span class="player-resolution-pill" id="player-resolution-badge">1080p HD</span>
                   <button class="player-hud-btn tv-focusable" id="player-hud-subtitles-toggle" tabindex="0" title="Toggle On-Screen Subtitles">CC</button>
                 </div>
               </div>
@@ -269,12 +266,21 @@
               <!-- Bottom Controls HUD Bar -->
               <div class="player-hud-bottom outer-bezel">
                 <div class="inner-core player-hud-inner">
-                  <!-- Timeline Seekbar with Timestamp preview -->
+                  <!-- Timeline Seekbar with YouTube-style Chunk Buffer Bar -->
                   <div class="player-timeline-wrapper">
-                    <input type="range" class="tv-slider tv-focusable" id="player-timeline-slider" min="0" max="10145" value="0" step="1" tabindex="0">
+                    <div class="player-timeline-track">
+                      <div class="player-buffer-bar" id="player-buffer-bar" style="width: 0%;"></div>
+                      <div class="player-progress-bar" id="player-progress-bar" style="width: 0%;"></div>
+                      <input type="range" class="tv-slider tv-focusable" id="player-timeline-slider" min="0" max="10145" value="0" step="1" tabindex="0">
+                    </div>
                     <div class="player-time-row">
-                      <span class="time-current" id="player-current-time">00:00:00</span>
-                      <span class="time-duration" id="player-total-duration">/ 02:49:05</span>
+                      <div class="time-left-group">
+                        <span class="time-current" id="player-current-time">00:00:00</span>
+                        <span class="time-duration" id="player-total-duration">/ 02:49:05</span>
+                      </div>
+                      <div class="player-buffer-stats" id="player-buffer-stats" title="YouTube Architecture Buffer Health">
+                        <span class="buffer-text" id="buffer-text">Buffer: 0.0s</span>
+                      </div>
                     </div>
                   </div>
 
@@ -290,11 +296,9 @@
                       <button class="player-ctrl-btn tv-focusable" id="player-btn-fwd5m" tabindex="0" title="Forward 5m">+5 min</button>
                     </div>
 
-                    <!-- Glowing Hero Button to Pause & Ask AI directly -->
-                    <button class="player-ask-ai-hero-btn tv-focusable" id="player-btn-ask-ai" tabindex="0">
-                      <span class="hero-ai-icon">🎙️</span>
-                      <span class="hero-ai-title">Ask AI (Pause &amp; Query)</span>
-                      <span class="hero-ai-chip">Zero Screen Switch</span>
+                    <!-- Ask AI button — subtle, right-aligned in controls -->
+                    <button class="player-ask-ai-ctrl-btn tv-focusable" id="player-btn-ask-ai" tabindex="0" title="Pause and ask a question (Space)">
+                      <span>💬 Ask AI</span>
                     </button>
                   </div>
                 </div>
@@ -302,122 +306,62 @@
             </div>
 
             <!-- ============================================== -->
-            <!-- IN-BETWEEN SCREEN AI ASSISTANT OVERLAY DRAWER  -->
-            <!-- (Slides over the paused frame without leaving) -->
+            <!-- IN-SCENE AI CHAT — slides up from bottom       -->
+            <!-- Only opens when user explicitly pauses & asks   -->
             <!-- ============================================== -->
-            <aside class="player-ai-drawer" id="player-ai-drawer" aria-label="In-Screen Rewind AI Assistant" aria-hidden="true">
-              <div class="drawer-chassis outer-bezel">
-                <div class="inner-core drawer-inner">
-                  <!-- Drawer Header -->
-                  <div class="drawer-header">
-                    <div class="drawer-brand">
-                      <div class="brand-badge small">
-                        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 19 2 12 11 5 11 19"></polygon><polygon points="22 19 13 12 22 5 22 19"></polygon></svg>
-                      </div>
-                      <div>
-                        <h3 class="drawer-title">Rewind In-Scene AI</h3>
-                        <div class="drawer-paused-badge">
-                          <span class="paused-dot"></span>
-                          <span id="drawer-paused-timestamp">Paused at 00:00:50</span>
-                        </div>
-                      </div>
-                    </div>
+            <aside class="player-ai-drawer" id="player-ai-drawer" aria-label="Rewind AI — Ask about this scene" aria-hidden="true">
+              <!-- Chat conversation thread (grows upward) -->
+              <div class="drawer-chat-thread" id="drawer-chat-thread"></div>
 
-                    <button class="drawer-close-btn tv-focusable" id="drawer-btn-resume" tabindex="0" title="Resume Movie (Esc)">
-                      <span>▶ Resume Movie</span>
-                    </button>
-                  </div>
-
-                  <!-- Active Protection Banner -->
-                  <div class="drawer-spoiler-banner">
-                    <span class="banner-shield-icon">🛡️</span>
-                    <span class="banner-text">Grounded strictly up to this frame • Zero future spoilers</span>
-                  </div>
-
-                  <!-- Drawer Scrollable Body -->
-                  <div class="drawer-body" id="drawer-scroll-body">
-                    <!-- Suggested Fast Questions for this scene -->
-                    <div class="drawer-section">
-                      <span class="drawer-section-title">SUGGESTED QUESTIONS AT THIS FRAME</span>
-                      <div class="drawer-preset-grid" id="drawer-preset-container">
-                        <button class="drawer-preset-btn tv-focusable" data-q="What happened just before this scene?" tabindex="0">
-                          What happened just before this scene?
-                        </button>
-                        <button class="drawer-preset-btn tv-focusable" data-q="Why does Cooper need to leave Earth?" tabindex="0">
-                          Why does Cooper need to leave Earth?
-                        </button>
-                        <button class="drawer-preset-btn tv-focusable" data-q="Who is Professor Brand and what equation is he solving?" tabindex="0">
-                          Who is Professor Brand and what equation is he solving?
-                        </button>
-                        <button class="drawer-preset-btn tv-focusable" data-q="Explain what the characters are talking about in this scene." tabindex="0">
-                          Explain what they are talking about
-                        </button>
-                        <button class="drawer-preset-btn tv-focusable" data-q="Who is Murf's ghost?" tabindex="0">
-                          Who is Murf's ghost? (Future Spoiler Check)
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Custom Question Input Bar -->
-                    <div class="drawer-section">
-                      <span class="drawer-section-title">ASK CUSTOM QUESTION</span>
-                      <div class="drawer-input-row">
-                        <div class="input-wrapper">
-                          <input type="text" class="tv-input tv-focusable" id="drawer-custom-input" placeholder="Ask anything about the movie so far..." tabindex="0">
-                        </div>
-                        <button class="tv-btn tv-btn-primary tv-focusable" id="drawer-btn-submit" tabindex="0">
-                          <span>Ask</span>
-                          <span class="btn-icon-circle">↵</span>
-                        </button>
-                      </div>
-                      <div class="drawer-voice-row">
-                        <button class="tv-btn tv-btn-secondary tv-focusable drawer-voice-btn" id="drawer-voice-ptt" tabindex="0">
-                          <span id="drawer-ptt-mic">🎙️</span>
-                          <span id="drawer-ptt-label">Push to Talk (Voice Query)</span>
-                        </button>
-                        <audio id="drawer-tts-audio" preload="auto" style="display:none;"></audio>
-                      </div>
-                    </div>
-
-                    <!-- Loading Spinner Overlay inside Drawer -->
-                    <div class="drawer-loading hidden" id="drawer-loading">
-                      <div class="tv-spinner"></div>
-                      <span>Retrieving grounded scene dialogue...</span>
-                    </div>
-
-                    <!-- Grounded Answer Display Box -->
-                    <div class="drawer-answer-box hidden" id="drawer-answer-box">
-                      <div class="answer-query-chip">
-                        <span class="chip-label">QUESTION:</span>
-                        <span class="chip-text" id="drawer-answer-query"></span>
-                      </div>
-                      
-                      <div class="answer-grounded-badge">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span>GROUNDED IN VERIFIED DIALOGUE</span>
-                      </div>
-
-                      <div class="drawer-answer-text" id="drawer-answer-text"></div>
-
-                      <!-- Citations list -->
-                      <div class="drawer-citations" id="drawer-citations-wrap">
-                        <span class="citations-title">EXACT SCENE CITATIONS:</span>
-                        <div class="drawer-citations-grid" id="drawer-citations-grid"></div>
-                      </div>
-
-                      <div class="drawer-answer-actions">
-                        <button class="tv-btn tv-btn-primary tv-focusable" id="drawer-btn-resume-after-ans" tabindex="0">
-                          <span>▶ Resume Movie</span>
-                          <span class="btn-icon-circle">▶</span>
-                        </button>
-                        <button class="tv-btn tv-btn-secondary tv-focusable" id="drawer-btn-ask-more" tabindex="0">
-                          <span>Ask Another</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+              <!-- Bottom input bar -->
+              <div class="drawer-input-bar">
+                <div class="drawer-input-meta">
+                  <span class="drawer-paused-dot"></span>
+                  <span class="drawer-paused-label" id="drawer-paused-timestamp">Paused</span>
+                  <span class="drawer-shield-pill">🛡️ Safe</span>
+                </div>
+                <div class="drawer-input-row">
+                  <input
+                    type="text"
+                    class="drawer-chat-input tv-focusable"
+                    id="drawer-custom-input"
+                    placeholder="Ask anything about the movie…"
+                    tabindex="0"
+                    autocomplete="off"
+                  >
+                  <button class="drawer-send-btn tv-focusable" id="drawer-btn-submit" tabindex="0" title="Send">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                  </button>
+                  <button class="drawer-voice-pill tv-focusable" id="drawer-voice-ptt" tabindex="0" title="Voice query">
+                    <span id="drawer-ptt-mic">🎙️</span>
+                    <span id="drawer-ptt-label" class="visually-hidden">Voice</span>
+                  </button>
+                </div>
+                <div class="drawer-input-actions">
+                  <button class="drawer-resume-btn tv-focusable" id="drawer-btn-resume" tabindex="0">
+                    ▶ Resume
+                  </button>
+                  <button class="drawer-resume-btn tv-focusable" id="drawer-btn-resume-after-ans" tabindex="0" style="display:none;">
+                    ▶ Resume
+                  </button>
+                  <button class="drawer-ask-more-btn tv-focusable" id="drawer-btn-ask-more" tabindex="0" style="display:none;">
+                    Ask more
+                  </button>
                 </div>
               </div>
+
+              <!-- Loading state -->
+              <div class="drawer-thinking hidden" id="drawer-loading">
+                <div class="thinking-dots"><span></span><span></span><span></span></div>
+                <span>Thinking…</span>
+              </div>
+
+              <!-- Hidden elements kept for JS wiring -->
+              <div id="drawer-answer-box" style="display:none;"></div>
+              <span id="drawer-answer-query" style="display:none;"></span>
+              <span id="drawer-answer-text" style="display:none;"></span>
+              <div id="drawer-citations-grid" style="display:none;"></div>
+              <audio id="drawer-tts-audio" preload="auto" style="display:none;"></audio>
             </aside>
 
           </div>
@@ -860,6 +804,9 @@
     <div class="tv-toast-container" id="toast-container" aria-live="polite"></div>
 
   </div>
+
+  <!-- Adaptive Bitrate Streaming (HLS / MSE) Engine (YouTube Architecture) -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
 
   <!-- Client JavaScript Modules -->
   <script src="js/api.js"></script>

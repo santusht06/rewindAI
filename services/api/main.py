@@ -141,11 +141,17 @@ def create_app() -> FastAPI:
 
     client_dir = Path(__file__).resolve().parent.parent.parent / "apps" / "tv-client"
     if client_dir.exists():
+        from fastapi.responses import FileResponse
         app.mount("/tv", StaticFiles(directory=str(client_dir), html=True), name="tv-client")
 
         @app.get("/", include_in_schema=False)
         async def root_redirect() -> RedirectResponse:
             return RedirectResponse(url="/tv/")
+
+        @app.get("/favicon.ico", include_in_schema=False)
+        async def favicon_route() -> FileResponse:
+            fav_path = client_dir / "favicon.ico"
+            return FileResponse(fav_path)
 
     # 8. Mount Media Assets for Video Playback (REWIND-REQ-018)
     from services.api.media.storage import LocalStorageProvider, get_media_storage
