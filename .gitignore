@@ -12,6 +12,7 @@ env/
 build/
 develop-eggs/
 dist/
+!apps/tv-client/dist/
 downloads/
 eggs/
 .eggs/
@@ -54,6 +55,8 @@ graphify-out/
 *.tmp
 *.log
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 ops/backups/

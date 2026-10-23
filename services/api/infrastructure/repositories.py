@@ -276,7 +276,7 @@ class SubtitleChunkRepository:
         if movie_id:
             conditions.append(SubtitleChunkTable.movie_id == movie_id)
         if max_end_time_seconds is not None:
-            conditions.append(SubtitleChunkTable.end_time_seconds <= max_end_time_seconds)
+            conditions.append(SubtitleChunkTable.start_time_seconds <= max_end_time_seconds)
 
         query = (
             select(SubtitleChunkTable)

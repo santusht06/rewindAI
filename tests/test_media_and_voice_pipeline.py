@@ -276,8 +276,9 @@ async def test_at11_and_at12_voice_query_and_tts_fallback(
     )
     await media_test_db.commit()
 
-    # Configure STT to recognize speech
+    # Configure STT to recognize speech and mock TTS for isolated testing
     set_stt_provider(MockSpeechToTextProvider(default_transcription="What was the gravity anomaly?"))
+    set_tts_provider(MockTextToSpeechProvider())
 
     # Audio input bytes (mock audio)
     fake_audio = base64.b64encode(b"RIFF-WAVE-BYTES-DATA").decode("ascii")

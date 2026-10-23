@@ -206,8 +206,8 @@ class RagOrchestrator:
                 playback_position_seconds=sess.current_position_seconds,
                 spoiler_mode=spoiler_mode_str,
             )
-        except (ProviderUnavailableError, ProviderTimeoutError) as exc:
-            # Gemini is overloaded — fall back to mock provider for basic context answer
+        except ProviderUnavailableError as exc:
+            # Model service is temporarily unavailable — fall back to mock provider for basic context answer
             from services.api.ai.provider import DeterministicMockModelProvider
             mock = DeterministicMockModelProvider()
             model_output = await mock.generate_grounded_answer(
@@ -224,6 +224,15 @@ class RagOrchestrator:
         outcome = model_output.get("outcome", "answered")
         raw_answer = model_output.get("answer")
         cited_ids = model_output.get("cited_chunk_ids", [])
+
+        # Ensure raw_answer is never empty or None
+        if not raw_answer or not str(raw_answer).strip():
+            if candidates:
+                latest = candidates[-1]
+                raw_answer = f"At this point in the film ({latest.get('start_time_formatted')}), the scene involves: \"{latest.get('text', '')[:200]}...\""
+                outcome = "answered"
+            else:
+                raw_answer = "No dialogue has taken place yet up to your current playback position."
 
         # 9. Citation Verification (BE-AI-006): Ensure cited chunks exist in retrieved boundary set
         valid_chunk_map = {c["id"]: c for c in candidates}

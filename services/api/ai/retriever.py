@@ -121,27 +121,32 @@ class SubtitleRetriever:
             }
             scored_candidates.append((composite_score, chunk_dict))
 
-        # Rank candidates by composite score descending
-        scored_candidates.sort(key=lambda x: x[0], reverse=True)
+        # 4. Always include the immediate active scene (the last 2 chunks up to the pause timestamp)
+        # This is critical for situational questions like "who is this", "what is happening", "why is he crying"
+        active_scene_chunks = [
+            {
+                "id": c.id,
+                "ordinal": c.ordinal,
+                "start_time_seconds": c.start_time_seconds,
+                "end_time_seconds": c.end_time_seconds,
+                "start_time_formatted": c.start_time_formatted,
+                "end_time_formatted": c.end_time_formatted,
+                "text": c.text,
+                "speaker": c.speaker,
+                "relevance_score": 0.95,
+            }
+            for c in safe_chunks[-2:]
+        ]
 
-        # Select top candidates, falling back to chronological recency if low relevance
-        top_candidates = [c for score, c in scored_candidates[:limit]]
-        if not top_candidates:
-            # Fall back to most recent chunks up to playback position
-            top_candidates = [
-                {
-                    "id": c.id,
-                    "ordinal": c.ordinal,
-                    "start_time_seconds": c.start_time_seconds,
-                    "end_time_seconds": c.end_time_seconds,
-                    "start_time_formatted": c.start_time_formatted,
-                    "end_time_formatted": c.end_time_formatted,
-                    "text": c.text,
-                    "speaker": c.speaker,
-                    "relevance_score": 0.5,
-                }
-                for c in safe_chunks[-limit:]
-            ]
+        # Combine active scene chunks with top semantic search candidates (deduplicated)
+        combined_candidates: dict[str, dict[str, Any]] = {c["id"]: c for c in active_scene_chunks}
+        for score, c in scored_candidates:
+            if len(combined_candidates) >= max(limit, 5):
+                break
+            if c["id"] not in combined_candidates:
+                combined_candidates[c["id"]] = c
+
+        top_candidates = list(combined_candidates.values())
 
         # Re-sort selected top candidates chronologically for coherent narrative context
         top_candidates.sort(key=lambda x: x["start_time_seconds"])

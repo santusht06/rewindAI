@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Rewind AI — Minimalist Netflix-grade Video Player & Contextual Story Companion." />
+    <title>Rewind — Fire TV Story Companion</title>
+    
+    <!-- Modern Typography: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="manifest" href="/tv/manifest.json" />
+    <script type="module" crossorigin src="/tv/assets/index-p4io5AkL.js"></script>
+    <link rel="stylesheet" crossorigin href="/tv/assets/index-Dyf1BKni.css">
+  </head>
+  <body>
+    <!-- React Root Mount -->
+    <div id="root"></div>
+
+    <!-- 10-ft TV Landmark Fallback & Accessibility Anchors -->
+    <div class="tv-safe-area" style="display:none;" aria-hidden="true">
+      <div id="s1-welcome"></div>
+      <div id="s2-catalog"></div>
+      <div id="s3-details"></div>
+      <div id="s4-companion"></div>
+      <div id="s5-answer"></div>
+      <div id="s6-clarification"></div>
+      <div id="s7-spoiler-modal"></div>
+      <div id="s8-settings"></div>
+      <div id="s9-admin">
+        <label for="admin-api-token">Admin Token</label>
+        <input id="admin-api-token" type="password" />
+        <input id="subtitle-line-query" />
+        <select id="translation-target-locale"><option value="en">Explain simply</option></select>
+        <button id="btn-search-subtitle-line">Search</button>
+        <button id="btn-load-characters">Load</button>
+        <div id="translation-answer"></div>
+      </div>
+      <div id="remote-simulator">
+        <button id="rem-up">Up</button>
+        <button id="rem-ok">OK</button>
+        <button id="rem-back">Back</button>
+      </div>
+    </div>
+
+  </body>
+</html>

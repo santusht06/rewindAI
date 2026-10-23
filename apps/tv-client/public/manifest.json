@@ -1,0 +1,44 @@
+{
+  "name": "Rewind — Fire TV & Vega OS AI Story Companion",
+  "short_name": "Rewind",
+  "description": "Evidence-grounded, spoiler-safe AI story companion for Fire TV and Vega OS",
+  "start_url": "/tv/index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "theme_color": "#06080d",
+  "background_color": "#06080d",
+  "categories": ["entertainment", "video", "utilities"],
+  "icons": [
+    {
+      "src": "/tv/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/tv/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "tv": {
+    "overscan_margin": "5%",
+    "input_mode": "dpad",
+    "remote_control": true,
+    "spatial_navigation": true,
+    "min_resolution": "1920x1080"
+  },
+  "platforms": [
+    {
+      "platform": "amazon-fire-os",
+      "url": "http://localhost:8000/tv/",
+      "id": "com.amazon.firetv.rewind"
+    },
+    {
+      "platform": "amazon-vega-os",
+      "url": "/tv/index.html",
+      "id": "com.amazon.vega.rewind"
+    }
+  ]
+}

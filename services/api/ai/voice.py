@@ -74,11 +74,13 @@ class MockSpeechToTextProvider:
 # ──────────────────────────────────────────────────────────────────────────────
 
 class MockTextToSpeechProvider:
-    """Returns empty bytes so the TV client falls back to browser Web Speech API."""
+    """Mock TTS provider returning simulated audio bytes for tests, or empty bytes for browser Web Speech API."""
+
+    def __init__(self, audio_bytes: bytes = b"RIFF-MOCK-TTS-SYNTHESIZED-AUDIO") -> None:
+        self.audio_bytes = audio_bytes
 
     async def synthesize(self, text: str, voice: str | None = None) -> bytes:
-        # Return empty bytes — JS side will use window.speechSynthesis
-        return b""
+        return self.audio_bytes
 
 
 # ──────────────────────────────────────────────────────────────────────────────

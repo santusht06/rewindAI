@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # AI Provider Keys (Optional: when unset, deterministic Mock Provider is used)
     gemini_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
+    xai_api_key: SecretStr | None = None
+    grok_api_key: SecretStr | None = None
+    groq_api_key: SecretStr | None = None
 
     # Guardrails & Invariants
     spoiler_default_mode: Literal["safe", "full"] = "safe"

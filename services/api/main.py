@@ -140,9 +140,11 @@ def create_app() -> FastAPI:
     from starlette.staticfiles import StaticFiles
 
     client_dir = Path(__file__).resolve().parent.parent.parent / "apps" / "tv-client"
-    if client_dir.exists():
+    dist_dir = client_dir / "dist"
+    static_dir = dist_dir if (dist_dir / "index.html").exists() else client_dir
+    if static_dir.exists():
         from fastapi.responses import FileResponse
-        app.mount("/tv", StaticFiles(directory=str(client_dir), html=True), name="tv-client")
+        app.mount("/tv", StaticFiles(directory=str(static_dir), html=True), name="tv-client")
 
         @app.get("/", include_in_schema=False)
         async def root_redirect() -> RedirectResponse:
@@ -150,7 +152,9 @@ def create_app() -> FastAPI:
 
         @app.get("/favicon.ico", include_in_schema=False)
         async def favicon_route() -> FileResponse:
-            fav_path = client_dir / "favicon.ico"
+            fav_path = static_dir / "favicon.ico"
+            if not fav_path.exists():
+                fav_path = client_dir / "favicon.ico"
             return FileResponse(fav_path)
 
     # 8. Mount Media Assets for Video Playback (REWIND-REQ-018)
