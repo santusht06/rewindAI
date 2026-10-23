@@ -1,0 +1,9 @@
+{
+  "name": "rewind-tv-client",
+  "version": "1.0.0",
+  "description": "Rewind — Fire TV AI Story Companion 10-ft Web Client",
+  "scripts": {
+    "dev": "npx serve -l 3000 .",
+    "start": "npx serve -l 3000 ."
+  }
+}
