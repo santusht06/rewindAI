@@ -25,6 +25,8 @@ from services.api.domain.models import (
 from services.api.errors import (
     AuthorizationError,
     NotFoundError,
+    ProviderTimeoutError,
+    ProviderUnavailableError,
 )
 from services.api.infrastructure.repositories import (
     AuditEventRepository,
@@ -195,14 +197,28 @@ class RagOrchestrator:
                 created_at=now,
             )
 
-        # 8. Call Model Provider with bounded context
+        # 8. Call Model Provider with bounded context (with graceful fallback)
         model_start = time.perf_counter()
-        model_output = await self.model_provider.generate_grounded_answer(
-            question=question_text,
-            context_chunks=candidates,
-            playback_position_seconds=sess.current_position_seconds,
-            spoiler_mode=spoiler_mode_str,
-        )
+        try:
+            model_output = await self.model_provider.generate_grounded_answer(
+                question=question_text,
+                context_chunks=candidates,
+                playback_position_seconds=sess.current_position_seconds,
+                spoiler_mode=spoiler_mode_str,
+            )
+        except (ProviderUnavailableError, ProviderTimeoutError) as exc:
+            # Gemini is overloaded — fall back to mock provider for basic context answer
+            from services.api.ai.provider import DeterministicMockModelProvider
+            mock = DeterministicMockModelProvider()
+            model_output = await mock.generate_grounded_answer(
+                question=question_text,
+                context_chunks=candidates,
+                playback_position_seconds=sess.current_position_seconds,
+                spoiler_mode=spoiler_mode_str,
+            )
+            # Prepend a note that AI is temporarily degraded
+            if model_output.get("answer"):
+                model_output["answer"] = f"[AI briefly unavailable — showing context] {model_output['answer']}"
         telemetry.record_latency("model_inference", (time.perf_counter() - model_start) * 1000)
 
         outcome = model_output.get("outcome", "answered")

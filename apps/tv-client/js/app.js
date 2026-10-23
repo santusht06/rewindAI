@@ -774,19 +774,23 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     if (!questionText) return;
 
     const video = document.getElementById('main-video-player');
-    const currentSec = Math.floor(video?.currentTime || 0);
+    // Capture exact pause position — this is the key timestamp for RAG context
+    const currentSec = video?.currentTime || 0;
 
     const thread = document.getElementById('drawer-chat-thread');
     const loader = document.getElementById('drawer-loading');
     const input = document.getElementById('drawer-custom-input');
 
-    // Append user bubble
+    // Append user bubble with timestamp context
     if (thread) {
       const userMsg = document.createElement('div');
       userMsg.className = 'chat-msg user';
       userMsg.innerHTML = `
         <div class="chat-avatar">👤</div>
-        <div class="chat-bubble">${this.escapeHtml(questionText)}</div>
+        <div class="chat-bubble">
+          ${this.escapeHtml(questionText)}
+          <span class="msg-timestamp" style="display:block;font-size:0.7em;opacity:0.5;margin-top:4px">Paused at ${this.formatTime(Math.floor(currentSec))}</span>
+        </div>
       `;
       thread.appendChild(userMsg);
       thread.scrollTop = thread.scrollHeight;
@@ -795,7 +799,7 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
     // Clear input
     if (input) input.value = '';
 
-    // Show thinking
+    // Show thinking indicator
     if (loader) loader.classList.remove('hidden');
 
     try {
@@ -810,15 +814,21 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
 
       const sessId = this.currentSession.id || this.currentSession.session_id;
 
-      // Update progress to exact paused frame
-      await window.RewindApi.updateProgress(sessId, currentSec).catch(() => {});
-
-      const result = await window.RewindApi.askQuestion(sessId, questionText);
+      // Use text-query endpoint — sends exact position for timestamp-bounded RAG
+      // This is the core fix: AI now knows WHERE in the movie you paused
+      let result;
+      try {
+        result = await window.RewindApi.submitTextQuery(sessId, questionText, currentSec, 'safe', true);
+      } catch (textQueryErr) {
+        // Fallback to legacy askQuestion if text-query endpoint not available
+        await window.RewindApi.updateProgress(sessId, Math.floor(currentSec)).catch(() => {});
+        result = await window.RewindApi.askQuestion(sessId, questionText);
+      }
 
       if (loader) loader.classList.add('hidden');
 
       // Build AI answer bubble
-      const answerText = result.answer || result.text || 'Context retrieved.';
+      const answerText = result.answer || result.text || 'I don\'t have enough context from the movie to answer that yet.';
       const citations = result.citations || result.sources || [];
 
       if (thread) {
@@ -830,7 +840,7 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
           const chips = citations.map(c => {
             const cueSec = Math.floor(c.start_time_seconds || c.start_seconds || 0);
             return `<button class="citation-chip" data-sec="${cueSec}" title="${this.escapeHtml(c.text || 'Jump to scene')}">
-              ⏱ ${this.formatTime(cueSec)} ${c.speaker ? '· ' + this.escapeHtml(c.speaker) : ''}
+              ⏱ ${this.formatTime(cueSec)}${c.speaker ? ' · ' + this.escapeHtml(c.speaker) : ''}
             </button>`;
           }).join('');
           citationsHtml = `<div class="chat-citations">${chips}</div>`;
@@ -846,7 +856,7 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
 
         thread.appendChild(aiMsg);
 
-        // Wire citation chips to seek
+        // Wire citation chips: clicking jumps to that scene in the movie
         aiMsg.querySelectorAll('.citation-chip').forEach(chip => {
           chip.addEventListener('click', () => {
             const sec = parseInt(chip.getAttribute('data-sec'), 10);
@@ -859,16 +869,16 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
         thread.scrollTop = thread.scrollHeight;
       }
 
-      // TTS audio playback if available
+      // TTS Audio Playback
       if (result.audio_base64) {
-        const audioEl = document.getElementById('drawer-tts-audio');
-        if (audioEl) {
-          audioEl.src = `data:audio/mp3;base64,${result.audio_base64}`;
-          audioEl.play().catch(() => {});
-        }
+        // Server-side Google TTS returned MP3 audio
+        this._speakWithAudio(result.audio_base64, result.audio_mime_type || 'audio/mpeg');
+      } else if (result.use_browser_tts && answerText) {
+        // Browser Web Speech API fallback (no server TTS available)
+        this._speakWithBrowserTTS(answerText);
       }
 
-      // Focus input for follow-up
+      // Focus input for follow-up questions
       setTimeout(() => {
         if (input) input.focus();
       }, 80);
@@ -880,9 +890,11 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
       if (thread) {
         const errMsg = document.createElement('div');
         errMsg.className = 'chat-msg ai';
-        let errText = `Unable to retrieve dialogue context: ${err.message}`;
+        let errText = `Unable to answer: ${err.message || 'Unknown error'}`;
         if (err.code === 'SPOILER_BLOCKED' || err.status === 409) {
-          errText = "⚠️ Future spoiler blocked \u2014 this answer reveals events you haven\u2019t reached yet. Safe Mode is protecting you.";
+          errText = "⚠️ This answer reveals events you haven't reached yet. Safe Mode is protecting you from spoilers.";
+        } else if (err.code === 'NETWORK_OFFLINE') {
+          errText = "⚠️ Cannot reach the Rewind server. Check your connection.";
         }
         errMsg.innerHTML = `
           <div class="chat-avatar">✦</div>
@@ -891,6 +903,59 @@ COOPER: Murf, it was me! I was your ghost! Love transcended five-dimensional spa
         thread.appendChild(errMsg);
         thread.scrollTop = thread.scrollHeight;
       }
+    }
+  }
+
+  /** Play MP3 audio returned from Google Cloud TTS */
+  _speakWithAudio(audioBase64, mimeType = 'audio/mpeg') {
+    try {
+      // Stop any current TTS
+      this._stopCurrentTTS();
+
+      const audioEl = document.getElementById('drawer-tts-audio');
+      if (audioEl) {
+        audioEl.src = `data:${mimeType};base64,${audioBase64}`;
+        audioEl.play().catch(err => {
+          console.warn('TTS audio playback failed, using browser fallback:', err);
+        });
+        this._currentTTSAudio = audioEl;
+      }
+    } catch (e) {
+      console.warn('TTS audio error:', e);
+    }
+  }
+
+  /** Browser Web Speech API TTS fallback */
+  _speakWithBrowserTTS(text) {
+    if (!window.speechSynthesis) return;
+    try {
+      this._stopCurrentTTS();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1.0;
+      utter.pitch = 1.0;
+      utter.volume = 1.0;
+      // Prefer a natural English voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find(v =>
+        v.lang.startsWith('en') && (v.name.includes('Neural') || v.name.includes('Natural') || v.name.includes('Google'))
+      ) || voices.find(v => v.lang.startsWith('en'));
+      if (preferred) utter.voice = preferred;
+      this._currentBrowserUtter = utter;
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      console.warn('Browser TTS error:', e);
+    }
+  }
+
+  /** Stop any currently playing TTS (audio or browser speech) */
+  _stopCurrentTTS() {
+    if (this._currentTTSAudio) {
+      this._currentTTSAudio.pause();
+      this._currentTTSAudio.src = '';
+      this._currentTTSAudio = null;
+    }
+    if (window.speechSynthesis && window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
     }
   }
 

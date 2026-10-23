@@ -201,10 +201,40 @@ class VoiceQueryResponse(BaseModel):
     session_id: str
     recognized_question: str
     outcome: str
-    answer: str
+    answer: str | None = None
     citations: list[CitationSchema] = Field(default_factory=list)
     audio_base64: str | None = None
+    audio_mime_type: str = Field(default="audio/mpeg", description="MIME type of audio_base64 content")
+    use_browser_tts: bool = Field(default=False, description="True when server TTS unavailable; client should use Web Speech API")
     policy_state: str
+    created_at: str
+
+
+class TextQueryRequest(BaseModel):
+    """Text question with current playback position — primary pause-and-ask flow."""
+
+    session_id: str
+    question: str = Field(..., min_length=1, max_length=500, description="The viewer's typed or voice-recognized question")
+    playback_position_seconds: float = Field(..., ge=0, description="Current video playback position in seconds")
+    spoiler_mode: str = Field(default="safe")
+    synthesize_speech: bool = Field(default=True, description="Whether to include TTS audio in response")
+    client_request_id: str | None = None
+
+
+class TextQueryResponse(BaseModel):
+    """Result of context-aware Q&A with optional TTS audio."""
+
+    question_id: str
+    session_id: str
+    question: str
+    outcome: str
+    answer: str | None = None
+    citations: list[CitationSchema] = Field(default_factory=list)
+    audio_base64: str | None = None
+    audio_mime_type: str = Field(default="audio/mpeg")
+    use_browser_tts: bool = Field(default=False)
+    policy_state: str
+    playback_position_seconds: float
     created_at: str
 
 
@@ -285,8 +315,86 @@ async def submit_voice_query(
         answer=q_res.answer,
         citations=q_res.citations,
         audio_base64=audio_out_b64,
+        audio_mime_type="audio/mpeg",
+        use_browser_tts=(audio_out_b64 is None and bool(q_res.answer)),
         policy_state=q_res.policy_state,
         created_at=q_res.created_at.isoformat() if hasattr(q_res.created_at, "isoformat") else str(q_res.created_at),
     )
 
 
+@router.post(
+    "/text-query",
+    response_model=TextQueryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Submit Text Question with Playback Position",
+)
+async def submit_text_query(
+    body: TextQueryRequest,
+    user_id: ViewerId,
+    db: Database,
+) -> TextQueryResponse:
+    """Primary pause-and-ask flow: text question + playback position → RAG answer + TTS.
+    
+    1. Updates session playback position to body.playback_position_seconds
+    2. Runs vector-DB retrieval bounded to that timestamp (no spoilers)
+    3. Calls Gemini to synthesize a conversational answer
+    4. Optionally synthesizes speech (Google TTS → MP3, or browser fallback signal)
+    """
+    import base64
+    from services.api.ai.orchestrator import RagOrchestrator
+    from services.api.ai.voice import get_tts_provider
+
+    # 1. Validate and update session position
+    session_repo = ViewingSessionRepository(db)
+    session = await session_repo.get_by_id(body.session_id)
+    if not session:
+        raise NotFoundError(f"Session '{body.session_id}' not found.")
+    if session.user_id != user_id:
+        raise AuthorizationError("Access denied to this viewing session.")
+
+    # Always sync the position so RAG boundary is exact
+    await session_repo.update_progress(
+        session_id=body.session_id,
+        position_seconds=body.playback_position_seconds,
+        source=ProgressSource.VOICE_CUE,
+    )
+
+    # 2. RAG: retrieve chunks bounded to position → Gemini synthesizes answer
+    orchestrator = RagOrchestrator(db_session=db)
+    q_res = await orchestrator.answer_question(
+        session_id=body.session_id,
+        question_text=body.question,
+        user_id=user_id,
+        client_request_id=body.client_request_id,
+    )
+
+    # 3. TTS Synthesis
+    audio_out_b64: str | None = None
+    use_browser_tts = False
+
+    if body.synthesize_speech and q_res.answer:
+        tts = get_tts_provider()
+        try:
+            tts_bytes = await tts.synthesize(q_res.answer)
+            if tts_bytes:
+                audio_out_b64 = base64.b64encode(tts_bytes).decode("ascii")
+            else:
+                # Google TTS unavailable — signal client to use Web Speech API
+                use_browser_tts = True
+        except Exception:
+            use_browser_tts = True  # graceful degradation
+
+    return TextQueryResponse(
+        question_id=q_res.question_id,
+        session_id=q_res.session_id,
+        question=body.question,
+        outcome=q_res.outcome,
+        answer=q_res.answer,
+        citations=q_res.citations,
+        audio_base64=audio_out_b64,
+        audio_mime_type="audio/mpeg",
+        use_browser_tts=use_browser_tts,
+        policy_state=q_res.policy_state,
+        playback_position_seconds=body.playback_position_seconds,
+        created_at=q_res.created_at.isoformat() if hasattr(q_res.created_at, "isoformat") else str(q_res.created_at),
+    )

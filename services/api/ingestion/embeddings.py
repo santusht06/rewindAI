@@ -84,10 +84,10 @@ class DeterministicMockEmbeddingProvider(EmbeddingProvider):
 class GeminiEmbeddingProvider(EmbeddingProvider):
     """Google Gemini text-embedding provider."""
 
-    def __init__(self, api_key: str | None = None, model: str = "text-embedding-004") -> None:
+    def __init__(self, api_key: str | None = None, model: str = "gemini-embedding-2") -> None:
         self._api_key = api_key or (settings.gemini_api_key.get_secret_value() if settings.gemini_api_key else "")
         self._model = model
-        self._dim = 768
+        self._dim = 3072  # gemini-embedding-2 dimension
 
     @property
     def model_name(self) -> str:
@@ -101,27 +101,44 @@ class GeminiEmbeddingProvider(EmbeddingProvider):
         if not self._api_key:
             raise ProviderUnavailableError("Gemini API key is not configured.")
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self._model}:batchEmbedContents?key={self._api_key}"
-        requests_payload = [
-            {"model": f"models/{self._model}", "content": {"parts": [{"text": t}]}}
-            for t in texts
-        ]
+        # Use individual embedContent calls (batchEmbedContents has different format for newer models)
+        # Process in batches of 10 to avoid rate limits
+        all_embeddings: list[list[float]] = []
+        batch_size = 10
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            try:
-                resp = await client.post(url, json={"requests": requests_payload})
-                if resp.status_code != 200:
-                    raise ProviderUnavailableError(
-                        f"Gemini embedding API error: status={resp.status_code}",
-                        details={"response": resp.text[:200]},
-                    )
-                data = resp.json()
-                embeddings = [e["values"] for e in data.get("embeddings", [])]
-                return embeddings
-            except httpx.TimeoutException as exc:
-                raise ProviderTimeoutError("Gemini embedding request timed out.") from exc
-            except httpx.RequestError as exc:
-                raise ProviderUnavailableError(f"Network error calling Gemini: {exc}") from exc
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            for i in range(0, len(texts), batch_size):
+                batch = texts[i:i + batch_size]
+                batch_embeddings: list[list[float]] = []
+
+                for text in batch:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{self._model}:embedContent?key={self._api_key}"
+                    payload = {
+                        "model": f"models/{self._model}",
+                        "content": {"parts": [{"text": text}]},
+                    }
+                    try:
+                        resp = await client.post(url, json=payload)
+                        if resp.status_code != 200:
+                            raise ProviderUnavailableError(
+                                f"Gemini embedding API error: status={resp.status_code}",
+                                details={"response": resp.text[:200]},
+                            )
+                        data = resp.json()
+                        values = data.get("embedding", {}).get("values", [])
+                        if not values:
+                            raise ProviderUnavailableError("Gemini embedding returned empty values.")
+                        batch_embeddings.append(values)
+                        # Update dimension based on actual response
+                        self._dim = len(values)
+                    except httpx.TimeoutException as exc:
+                        raise ProviderTimeoutError("Gemini embedding request timed out.") from exc
+                    except httpx.RequestError as exc:
+                        raise ProviderUnavailableError(f"Network error calling Gemini: {exc}") from exc
+
+                all_embeddings.extend(batch_embeddings)
+
+        return all_embeddings
 
 
 def get_embedding_provider() -> EmbeddingProvider:

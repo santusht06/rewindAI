@@ -212,6 +212,20 @@ class RewindApiClient {
     });
   }
 
+  // Text Query — primary pause-and-ask flow (sends position for context-aware RAG)
+  async submitTextQuery(sessionId, question, positionSeconds, spoilerMode = 'safe', synthesizeSpeech = true) {
+    return this._request('/assistant/text-query', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        question: question,
+        playback_position_seconds: positionSeconds,
+        spoiler_mode: spoilerMode,
+        synthesize_speech: synthesizeSpeech,
+      }),
+    });
+  }
+
   // Media Processing Pipeline (REWIND-REQ-019)
   async adminUploadMedia(movieId, fileName, fileBase64, contentType = 'video/mp4', suppliedSrt = null, adminToken = '') {
     return this._request(`/admin/movies/${encodeURIComponent(movieId)}/media`, {
